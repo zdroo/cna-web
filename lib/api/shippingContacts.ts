@@ -45,3 +45,19 @@ export async function addShippingContact(
     const json = await res.json();
     return json.shippingContactId;
 }
+
+export async function deleteShippingContact(token: string, id: string): Promise<void> {
+    const res = await fetch(`${BASE}/api/shipping-contacts/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Nu s-a putut șterge adresa");
+}
+
+export async function setDefaultShippingContact(token: string, id: string): Promise<void> {
+    const res = await fetch(`${BASE}/api/shipping-contacts/${id}/set-default`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Nu s-a putut seta adresa implicită");
+}

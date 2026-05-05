@@ -35,25 +35,25 @@ export default function PaymentPage({ params }: { params: Promise<{ orderId: str
     if (cancelled) {
         return (
             <div className="flex flex-col items-center justify-center py-24 gap-6 text-center">
-                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <XCircle size={32} className="text-yellow-600" />
+                <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-950 rounded-full flex items-center justify-center">
+                    <XCircle size={32} className="text-yellow-600 dark:text-yellow-400" />
                 </div>
                 <div className="flex flex-col gap-2">
-                    <h1 className="text-2xl font-bold text-gray-900">Plată anulată</h1>
-                    <p className="text-gray-500 text-sm max-w-sm">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Plată anulată</h1>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm">
                         Comanda ta a fost salvată. Poți relua plata oricând.
                     </p>
                 </div>
                 <div className="flex gap-3">
                     <a
                         href={`/payment/${orderId}`}
-                        className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-700 transition-colors text-sm"
+                        className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-700 dark:hover:bg-gray-300 transition-colors text-sm"
                     >
                         Încearcă din nou
                     </a>
                     <Link
-                        href="/orders"
-                        className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-50 transition-colors text-sm"
+                        href="/comenzi"
+                        className="border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm"
                     >
                         Comenzile mele
                     </Link>
@@ -65,10 +65,10 @@ export default function PaymentPage({ params }: { params: Promise<{ orderId: str
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-                <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
                     {error}
                 </p>
-                <Link href="/orders" className="text-sm text-gray-500 hover:text-gray-700 underline">
+                <Link href="/comenzi" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline">
                     Vezi comenzile mele
                 </Link>
             </div>
@@ -76,8 +76,8 @@ export default function PaymentPage({ params }: { params: Promise<{ orderId: str
     }
 
     return (
-        <div className="flex flex-col items-center justify-center py-24 gap-4 text-gray-500">
-            <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+        <div className="flex flex-col items-center justify-center py-24 gap-4 text-gray-500 dark:text-gray-400">
+            <div className="w-8 h-8 border-2 border-gray-300 dark:border-gray-600 border-t-gray-900 dark:border-t-gray-100 rounded-full animate-spin" />
             <p className="text-sm">Se încarcă pagina de plată...</p>
         </div>
     );

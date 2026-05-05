@@ -64,13 +64,13 @@ export default function HomeContent({ categories, allVariants }: Props) {
 
             <div className="flex-1 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-gray-900">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                         {selectedCategoryId
                             ? categories.find((c) => c.categoryId === selectedCategoryId)?.name ?? "Produse"
                             : "Produse populare"}
                     </h2>
                     {!selectedCategoryId && !selectedProductId && (
-                        <Link href="/products" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+                        <Link href="/products" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                             Vezi toate →
                         </Link>
                     )}
@@ -99,7 +99,7 @@ export default function HomeContent({ categories, allVariants }: Props) {
                         ))}
                     </div>
                 ) : (
-                    <div className="flex items-center justify-center py-24 text-gray-400">
+                    <div className="flex items-center justify-center py-24 text-gray-400 dark:text-gray-500">
                         <p>Niciun produs găsit pentru filtrele selectate.</p>
                     </div>
                 )}

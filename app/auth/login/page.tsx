@@ -50,15 +50,15 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-[70vh] flex items-center justify-center">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-md p-8 flex flex-col gap-6">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 w-full max-w-md p-8 flex flex-col gap-6">
 
                 {/* Header */}
                 <div className="text-center">
-                    <Link href="/" className="text-xl font-bold text-gray-900">CNA Shop</Link>
-                    <h1 className="text-2xl font-bold text-gray-900 mt-4">
+                    <Link href="/" className="text-xl font-bold text-gray-900 dark:text-gray-100">CNA Shop</Link>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-4">
                         {mode === "login" ? "Bun venit înapoi" : "Creează cont"}
                     </h1>
-                    <p className="text-gray-500 text-sm mt-1">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                         {mode === "login" ? "Intră în contul tău" : "Înregistrează-te pentru a continua"}
                     </p>
                 </div>
@@ -66,39 +66,39 @@ export default function LoginPage() {
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-gray-700">Email</label>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
                         <input
                             type="email"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="exemplu@email.com"
-                            className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+                            className="border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-500 focus:border-transparent transition"
                         />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-gray-700">Parolă</label>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Parolă</label>
                         <input
                             type="password"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
-                            className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+                            className="border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-500 focus:border-transparent transition"
                         />
                     </div>
 
                     {mode === "register" && (
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-medium text-gray-700">Confirmă parola</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Confirmă parola</label>
                             <input
                                 type="password"
                                 required
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+                                className="border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-500 focus:border-transparent transition"
                             />
                         </div>
                     )}
@@ -118,9 +118,9 @@ export default function LoginPage() {
 
                 {/* Divider */}
                 <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-gray-100" />
-                    <span className="text-xs text-gray-400">sau</span>
-                    <div className="flex-1 h-px bg-gray-100" />
+                    <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+                    <span className="text-xs text-gray-400 dark:text-gray-500">sau</span>
+                    <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
                 </div>
 
                 {/* Google */}
@@ -137,11 +137,11 @@ export default function LoginPage() {
                 </div>
 
                 {/* Toggle */}
-                <p className="text-center text-sm text-gray-500">
+                <p className="text-center text-sm text-gray-500 dark:text-gray-400">
                     {mode === "login" ? "Nu ai cont?" : "Ai deja cont?"}{" "}
                     <button
                         onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(null); setConfirmPassword(""); }}
-                        className="font-semibold text-gray-900 hover:underline"
+                        className="font-semibold text-gray-900 dark:text-gray-100 hover:underline"
                     >
                         {mode === "login" ? "Înregistrează-te" : "Autentifică-te"}
                     </button>

@@ -17,6 +17,8 @@ export interface Order {
     totalAmount: number;
     status: OrderStatus;
     items: OrderItem[];
+    isPaid: boolean;
+    createdAt: string;
 }
 
 export async function getOrders(token: string): Promise<Order[]> {

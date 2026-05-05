@@ -10,8 +10,8 @@ export default async function CategoriesPage() {
 
             {/* Header */}
             <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
-                <p className="text-gray-500 mt-1">{categories.length} categories available</p>
+                <h1 className="text-3xl font-bold text-gray-900">Categorii</h1>
+                <p className="text-gray-500 mt-1">{categories.length} categorii disponibile</p>
             </div>
 
             {/* Categories grid */}

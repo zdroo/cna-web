@@ -27,7 +27,7 @@ export default function FavoriteButton({ variantId }: { variantId: string }) {
             <button
                 onClick={handleClick}
                 disabled={isLoading || !isLoaded}
-                aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                aria-label={isFavorited ? "Elimină de la favorite" : "Adaugă la favorite"}
                 className="flex items-center justify-center w-9 h-9 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
                 <Heart

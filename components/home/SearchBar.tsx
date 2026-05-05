@@ -18,17 +18,17 @@ export default function SearchBar({ initialQuery = "" }: { initialQuery?: string
 
     return (
         <form onSubmit={handleSubmit} className="w-full">
-            <div className="flex items-center bg-white border-2 border-gray-200 rounded-xl overflow-hidden focus-within:border-gray-900 transition-colors">
+            <div className="flex items-center bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden focus-within:border-gray-900 dark:focus-within:border-gray-400 transition-colors">
                 <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Caută produse, branduri, categorii..."
-                    className="flex-1 px-5 py-4 text-gray-900 placeholder-gray-400 outline-none text-base bg-transparent"
+                    className="flex-1 px-5 py-4 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none text-base bg-transparent"
                 />
                 <button
                     type="submit"
-                    className="flex items-center gap-2 bg-gray-900 text-white px-6 py-4 font-semibold hover:bg-gray-700 transition-colors"
+                    className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-6 py-4 font-semibold hover:bg-gray-700 dark:hover:bg-gray-300 transition-colors"
                 >
                     <Search size={20} />
                     <span className="hidden sm:inline">Caută</span>

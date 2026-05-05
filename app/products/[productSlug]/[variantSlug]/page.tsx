@@ -24,9 +24,9 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
 
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Link href="/" className="hover:text-gray-900 transition-colors">Home</Link>
+                <Link href="/" className="hover:text-gray-900 transition-colors">Acasă</Link>
                 <ChevronRight size={14} />
-                <Link href="/products" className="hover:text-gray-900 transition-colors">Products</Link>
+                <Link href="/products" className="hover:text-gray-900 transition-colors">Produse</Link>
                 <ChevronRight size={14} />
                 <Link href={`/products/${productSlug}`} className="hover:text-gray-900 transition-colors">
                     {slugToTitle(productSlug)}
@@ -50,7 +50,7 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
                             {variant.brand}
                         </p>
                     )}
-                    <h1 className="text-4xl font-bold text-gray-900">{variant.name}</h1>
+                    <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">{variant.name}</h1>
 
                     {/* Rating */}
                     <div className="flex items-center gap-2">
@@ -66,15 +66,15 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
                                 />
                             ))}
                         </div>
-                        <span className="text-sm font-medium text-gray-700">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             {(variant.averageRating ?? 0).toFixed(1)}
                         </span>
-                        <span className="text-sm text-gray-400">({variant.reviews.length} reviews)</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">({variant.reviews.length} recenzii)</span>
                     </div>
 
                     {/* Price */}
-                    <div className="text-3xl font-bold text-gray-900">
-                        ${variant.price.toFixed(2)}
+                    <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                        {variant.price.toFixed(2)} lei
                     </div>
 
                     {/* Attributes */}
@@ -82,8 +82,8 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
                         <div className="flex flex-col gap-3">
                             {attributeEntries.map(([name, value]) => (
                                 <div key={name} className="flex items-center gap-3">
-                                    <span className="text-sm font-semibold text-gray-700 w-16">{name}</span>
-                                    <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
+                                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 w-16">{name}</span>
+                                    <span className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm">
                                         {value}
                                     </span>
                                 </div>
@@ -95,13 +95,13 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
                     <div className="flex items-center gap-2">
                         <Package size={16} className={isOutOfStock ? "text-red-500" : "text-green-500"} />
                         <span className={`text-sm font-medium ${isOutOfStock ? "text-red-500" : "text-green-500"}`}>
-                            {isOutOfStock ? "Out of Stock" : `${variant.stockQuantity} in stock`}
+                            {isOutOfStock ? "Stoc epuizat" : `${variant.stockQuantity} în stoc`}
                         </span>
                     </div>
 
                     {/* Description */}
                     {variant.description && (
-                        <p className="text-gray-600 leading-relaxed">{variant.description}</p>
+                        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{variant.description}</p>
                     )}
 
                     {/* Actions */}
@@ -114,12 +114,12 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
 
             {/* Reviews */}
             <div className="flex flex-col gap-6">
-                <h2 className="text-2xl font-bold text-gray-900">Reviews</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Recenzii</h2>
 
                 {variant.reviews.length > 0 ? (
                     <div className="flex flex-col gap-4">
                         {variant.reviews.map((review) => (
-                            <div key={review.reviewId} className="bg-white rounded-xl p-6 shadow-sm">
+                            <div key={review.reviewId} className="bg-white dark:bg-gray-900 dark:border dark:border-gray-800 rounded-xl p-6 shadow-sm">
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
@@ -127,11 +127,11 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
                                                 {review.userName?.charAt(0).toUpperCase() ?? "?"}
                                             </span>
                                         </div>
-                                        <span className="font-medium text-gray-900">
-                                            {review.userName || "Anonymous"}
+                                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                                            {review.userName || "Anonim"}
                                         </span>
                                     </div>
-                                    <span className="text-sm text-gray-400">
+                                    <span className="text-sm text-gray-400 dark:text-gray-500">
                                         {new Date(review.createdAt).toLocaleDateString()}
                                     </span>
                                 </div>
@@ -148,15 +148,15 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
                                     ))}
                                 </div>
                                 {review.comment && (
-                                    <p className="text-gray-600">{review.comment}</p>
+                                    <p className="text-gray-600 dark:text-gray-400">{review.comment}</p>
                                 )}
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-white rounded-xl">
-                        <p className="font-medium">No reviews yet</p>
-                        <p className="text-sm mt-1">Be the first to review this product</p>
+                    <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900 dark:border dark:border-gray-800 rounded-xl">
+                        <p className="font-medium">Nicio recenzie încă</p>
+                        <p className="text-sm mt-1">Fii primul care recenzează acest produs</p>
                     </div>
                 )}
             </div>

@@ -21,11 +21,11 @@ export default async function ProductVariantsPage({ params }: ProductVariantsPag
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">{slugToTitle(productSlug)}</h1>
-                    <p className="text-gray-500 mt-1">{variants.length} variants found</p>
+                    <p className="text-gray-500 mt-1">{variants.length} variante disponibile</p>
                 </div>
                 <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                     <SlidersHorizontal size={16} />
-                    <span className="text-sm font-medium">Filters</span>
+                    <span className="text-sm font-medium">Filtre</span>
                 </button>
             </div>
 
@@ -40,7 +40,7 @@ export default async function ProductVariantsPage({ params }: ProductVariantsPag
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-                    <p className="text-lg font-medium">No variants found</p>
+                    <p className="text-lg font-medium">Nicio variantă găsită</p>
                 </div>
             )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -31,6 +31,7 @@ export default function CheckoutPage() {
     const { items, totalPrice, totalItems, clearCart } = useCart();
     const { user, token, isLoaded } = useAuth();
 
+    const submittedRef = useRef(false);
     const [contacts, setContacts] = useState<ShippingContact[]>([]);
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [showNewForm, setShowNewForm] = useState(false);
@@ -41,7 +42,7 @@ export default function CheckoutPage() {
     useEffect(() => {
         if (!isLoaded) return;
         if (!user) { router.replace("/auth/login"); return; }
-        if (items.length === 0) { router.replace("/cart"); return; }
+        if (items.length === 0 && !submittedRef.current) { router.replace("/cart"); return; }
 
         getShippingContacts(token!)
             .then((list) => {
@@ -92,6 +93,7 @@ export default function CheckoutPage() {
 
             const cartItemIds = items.map((i) => i.cartItemId);
             const { orderId } = await checkout(token!, contactId, cartItemIds);
+            submittedRef.current = true;
             clearCart();
             router.push(`/payment/${orderId}`);
         } catch (err: unknown) {
@@ -104,10 +106,10 @@ export default function CheckoutPage() {
     return (
         <div className="flex flex-col gap-8">
             <div className="flex items-center gap-3">
-                <Link href="/cart" className="text-gray-400 hover:text-gray-700 transition-colors">
+                <Link href="/cart" className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                     <ArrowLeft size={20} />
                 </Link>
-                <h1 className="text-2xl font-bold text-gray-900">Finalizare comandă</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Finalizare comandă</h1>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -115,9 +117,9 @@ export default function CheckoutPage() {
 
                     {/* Saved contacts */}
                     {contacts.length > 0 && (
-                        <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col gap-4">
-                            <h2 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
-                                <MapPin size={18} className="text-gray-500" />
+                        <div className="bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800 rounded-xl shadow-sm p-6 flex flex-col gap-4">
+                            <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-lg flex items-center gap-2">
+                                <MapPin size={18} className="text-gray-500 dark:text-gray-400" />
                                 Adresă de livrare
                             </h2>
 
@@ -127,8 +129,8 @@ export default function CheckoutPage() {
                                         key={c.shippingContactId}
                                         className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
                                             selectedContactId === c.shippingContactId && !showNewForm
-                                                ? "border-gray-900 bg-gray-50"
-                                                : "border-gray-200 hover:border-gray-400"
+                                                ? "border-gray-900 dark:border-gray-400 bg-gray-50 dark:bg-gray-800"
+                                                : "border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500"
                                         }`}
                                     >
                                         <input
@@ -143,13 +145,13 @@ export default function CheckoutPage() {
                                             className="mt-1"
                                         />
                                         <div className="text-sm">
-                                            <p className="font-medium text-gray-900">{c.fullName}</p>
-                                            <p className="text-gray-500">{c.phoneNumber}</p>
-                                            <p className="text-gray-500">
+                                            <p className="font-medium text-gray-900 dark:text-gray-100">{c.fullName}</p>
+                                            <p className="text-gray-500 dark:text-gray-400">{c.phoneNumber}</p>
+                                            <p className="text-gray-500 dark:text-gray-400">
                                                 {c.addressLine1}
                                                 {c.addressLine2 && `, ${c.addressLine2}`}
                                             </p>
-                                            <p className="text-gray-500">{c.city}, {c.region}, {c.postalCode}</p>
+                                            <p className="text-gray-500 dark:text-gray-400">{c.city}, {c.region}, {c.postalCode}</p>
                                         </div>
                                     </label>
                                 ))}
@@ -159,8 +161,8 @@ export default function CheckoutPage() {
                                     onClick={() => { setShowNewForm(true); setSelectedContactId(null); }}
                                     className={`flex items-center gap-2 p-4 rounded-lg border text-sm font-medium transition-colors ${
                                         showNewForm
-                                            ? "border-gray-900 bg-gray-50 text-gray-900"
-                                            : "border-dashed border-gray-300 text-gray-500 hover:border-gray-400 hover:text-gray-700"
+                                            ? "border-gray-900 dark:border-gray-400 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                            : "border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                                     }`}
                                 >
                                     <Plus size={16} />
@@ -172,10 +174,10 @@ export default function CheckoutPage() {
 
                     {/* New address form */}
                     {showNewForm && (
-                        <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col gap-4">
+                        <div className="bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800 rounded-xl shadow-sm p-6 flex flex-col gap-4">
                             {contacts.length === 0 && (
-                                <h2 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
-                                    <MapPin size={18} className="text-gray-500" />
+                                <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-lg flex items-center gap-2">
+                                    <MapPin size={18} className="text-gray-500 dark:text-gray-400" />
                                     Adresă de livrare
                                 </h2>
                             )}
@@ -195,7 +197,7 @@ export default function CheckoutPage() {
                     )}
 
                     {error && (
-                        <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                        <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
                             {error}
                         </p>
                     )}
@@ -203,52 +205,52 @@ export default function CheckoutPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-gray-900 text-white py-3.5 rounded-xl font-semibold hover:bg-gray-700 transition-colors disabled:opacity-60"
+                        className="w-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 py-3.5 rounded-xl font-semibold hover:bg-gray-700 dark:hover:bg-gray-300 transition-colors disabled:opacity-60"
                     >
                         {loading ? "Se procesează..." : "Plasează comanda"}
                     </button>
                 </form>
 
                 {/* Order summary */}
-                <div className="w-full lg:w-80 bg-white rounded-xl shadow-sm p-6 flex flex-col gap-4 sticky top-24">
+                <div className="w-full lg:w-80 bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800 rounded-xl shadow-sm p-6 flex flex-col gap-4 sticky top-24">
                     <div className="flex items-center gap-2">
-                        <ShoppingBag size={18} className="text-gray-500" />
-                        <h2 className="font-semibold text-gray-900">Sumar ({totalItems} produse)</h2>
+                        <ShoppingBag size={18} className="text-gray-500 dark:text-gray-400" />
+                        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Sumar ({totalItems} produse)</h2>
                     </div>
 
                     <div className="flex flex-col gap-3 max-h-64 overflow-y-auto">
                         {items.map((item) => (
                             <div key={item.cartItemId} className="flex gap-3 items-center">
-                                <div className="relative w-12 h-12 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                                <div className="relative w-12 h-12 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
                                     {item.primaryImageUrl ? (
                                         <Image src={item.primaryImageUrl} alt={item.name || ""} fill className="object-cover" />
                                     ) : (
-                                        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300" />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800" />
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                                    <p className="text-xs text-gray-500">× {item.quantity}</p>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">× {item.quantity}</p>
                                 </div>
-                                <p className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex-shrink-0">
                                     {(item.price * item.quantity).toFixed(2)} lei
                                 </p>
                             </div>
                         ))}
                     </div>
 
-                    <div className="border-t border-gray-100 pt-3 flex flex-col gap-1.5 text-sm text-gray-600">
+                    <div className="border-t border-gray-100 dark:border-gray-800 pt-3 flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex justify-between">
                             <span>Subtotal</span>
                             <span>{totalPrice.toFixed(2)} lei</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Livrare</span>
-                            <span className="text-green-600">Gratuită</span>
+                            <span className="text-green-600 dark:text-green-400">Gratuită</span>
                         </div>
                     </div>
 
-                    <div className="flex justify-between font-bold text-gray-900">
+                    <div className="flex justify-between font-bold text-gray-900 dark:text-gray-100">
                         <span>Total</span>
                         <span>{totalPrice.toFixed(2)} lei</span>
                     </div>
@@ -269,14 +271,14 @@ function Field({
 }) {
     return (
         <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">{label}</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
             <input
                 type="text"
                 name={name}
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 transition-shadow"
+                className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 transition-shadow"
             />
         </div>
     );

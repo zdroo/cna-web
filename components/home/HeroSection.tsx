@@ -10,26 +10,26 @@ export default function HeroSection() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-start justify-center px-12 py-32 max-w-2xl">
         <span className="text-sm font-semibold tracking-widest text-gray-400 uppercase mb-4">
-          New Collection 2026
+          Colecție Nouă 2026
         </span>
         <h1 className="text-5xl font-bold leading-tight mb-6">
-          Discover Your Perfect Style
+          Descoperă Stilul Tău Perfect
         </h1>
         <p className="text-lg text-gray-300 mb-8">
-          Explore our curated collection of premium products. Quality you can trust, style you will love.
+          Explorează colecția noastră de produse premium. Calitate în care poți avea încredere, stil pe care îl vei adora.
         </p>
         <div className="flex items-center gap-4">
           <Link
             href="/products"
             className="bg-white text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
           >
-            Shop Now
+            Cumpără Acum
           </Link>
           <Link
             href="/categories"
             className="border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors"
           >
-            Browse Categories
+            Vezi Categorii
           </Link>
         </div>
       </div>
