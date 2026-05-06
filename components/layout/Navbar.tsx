@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Heart } from "lucide-react";
 import CartBadge from "./CartBadge";
+import FavouritesBadge from "./FavouritesBadge";
 import UserMenu from "./UserMenu";
 
 export default function Navbar() {
@@ -22,9 +22,7 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/favourites" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-            <Heart size={22} />
-          </Link>
+          <FavouritesBadge />
           <CartBadge />
           <UserMenu />
         </div>

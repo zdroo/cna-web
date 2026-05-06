@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, X, Check, PlusCircle, MinusCircle, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Check, ExternalLink, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -10,7 +10,9 @@ import {
     adminCreateVariant,
     adminUpdateVariant,
     adminDeleteVariant,
+    adminGetMeasurementUnits,
     VariantAttribute,
+    MeasurementUnit,
 } from "@/lib/api/admin";
 
 interface Variant {
@@ -55,6 +57,7 @@ export default function AdminVariantePage() {
     const { token } = useAuth();
     const [variants, setVariants] = useState<Variant[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
+    const [units, setUnits] = useState<MeasurementUnit[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -65,10 +68,11 @@ export default function AdminVariantePage() {
 
     useEffect(() => {
         if (!token) return;
-        Promise.all([adminGetVariants(token), adminGetProducts(token)])
-            .then(([v, p]) => {
+        Promise.all([adminGetVariants(token), adminGetProducts(token), adminGetMeasurementUnits(token)])
+            .then(([v, p, u]) => {
                 setVariants(v);
                 setProducts(p);
+                setUnits(u);
             })
             .catch(console.error)
             .finally(() => setLoading(false));
@@ -110,20 +114,27 @@ export default function AdminVariantePage() {
     }
 
     function addAttribute() {
-        setForm((prev) => ({ ...prev, attributes: [...prev.attributes, { name: "", value: "" }] }));
+        setForm((prev) => ({ ...prev, attributes: [...prev.attributes, { name: "", value: "", unitId: undefined }] }));
     }
 
     function removeAttribute(index: number) {
         setForm((prev) => ({ ...prev, attributes: prev.attributes.filter((_, i) => i !== index) }));
     }
 
-    function updateAttribute(index: number, key: "name" | "value", val: string) {
+    function updateAttribute(index: number, key: keyof VariantAttribute, val: string) {
         setForm((prev) => {
             const updated = [...prev.attributes];
-            updated[index] = { ...updated[index], [key]: val };
+            updated[index] = { ...updated[index], [key]: key === "unitId" ? (val || undefined) : val };
             return { ...prev, attributes: updated };
         });
     }
+
+    const groupedUnits = Object.entries(
+        units.reduce<Record<string, MeasurementUnit[]>>((acc, u) => {
+            (acc[u.measures] ??= []).push(u);
+            return acc;
+        }, {})
+    ).sort(([a], [b]) => a.localeCompare(b));
 
     async function handleSave() {
         if (!token) return;
@@ -217,12 +228,28 @@ export default function AdminVariantePage() {
             </div>
 
             {showForm && (
-                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
-                    <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                        {editingId ? "Editează varianta" : "Variantă nouă"}
-                    </h2>
-                    <div className="flex flex-col gap-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            {editingId ? "Editează varianta" : "Variantă nouă"}
+                        </h2>
+                        <button
+                            onClick={closeForm}
+                            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+
+                    {/* Body */}
+                    <div className="flex divide-x divide-gray-100 dark:divide-gray-800">
+
+                        {/* Left — basic info */}
+                        <div className="flex-1 p-6 flex flex-col gap-4 min-w-0">
+                            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Informații generale</p>
+
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Produs <span className="text-red-500">*</span></label>
                                 <select
@@ -236,50 +263,54 @@ export default function AdminVariantePage() {
                                     ))}
                                 </select>
                             </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">SKU <span className="text-red-500">*</span></label>
-                                <input
-                                    type="text"
-                                    value={form.sku}
-                                    onChange={(e) => setField("sku", e.target.value)}
-                                    placeholder="ex. PROD-001-M-RED"
-                                    className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-                                />
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">SKU <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="text"
+                                        value={form.sku}
+                                        onChange={(e) => setField("sku", e.target.value)}
+                                        placeholder="ex. PROD-001-RED"
+                                        className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Preț (lei) <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={form.price}
+                                        onChange={(e) => setField("price", e.target.value)}
+                                        placeholder="149.99"
+                                        className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Stoc <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={form.quantity}
+                                        onChange={(e) => setField("quantity", e.target.value)}
+                                        placeholder="50"
+                                        className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Brand</label>
+                                    <input
+                                        type="text"
+                                        value={form.brand}
+                                        onChange={(e) => setField("brand", e.target.value)}
+                                        placeholder="ex. Nike"
+                                        className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+                                    />
+                                </div>
                             </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Preț (lei) <span className="text-red-500">*</span></label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={form.price}
-                                    onChange={(e) => setField("price", e.target.value)}
-                                    placeholder="ex. 149.99"
-                                    className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-                                />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Cantitate în stoc <span className="text-red-500">*</span></label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    value={form.quantity}
-                                    onChange={(e) => setField("quantity", e.target.value)}
-                                    placeholder="ex. 50"
-                                    className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-                                />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Brand</label>
-                                <input
-                                    type="text"
-                                    value={form.brand}
-                                    onChange={(e) => setField("brand", e.target.value)}
-                                    placeholder="ex. Nike"
-                                    className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-                                />
-                            </div>
+
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Descriere</label>
                                 <input
@@ -290,11 +321,9 @@ export default function AdminVariantePage() {
                                     className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
                                 />
                             </div>
-                        </div>
 
-                        {editingId && (
-                            <div className="flex items-center gap-3">
-                                <label className="flex items-center gap-2 cursor-pointer select-none">
+                            {editingId && (
+                                <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
                                     <input
                                         type="checkbox"
                                         checked={form.isActive}
@@ -303,70 +332,115 @@ export default function AdminVariantePage() {
                                     />
                                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Activă</span>
                                 </label>
-                            </div>
-                        )}
+                            )}
+                        </div>
 
-                        <div className="flex flex-col gap-2">
+                        {/* Right — attributes */}
+                        <div className="w-80 xl:w-96 flex-shrink-0 p-6 flex flex-col gap-3">
                             <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Atribute</label>
+                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                    Atribute
+                                    {form.attributes.length > 0 && (
+                                        <span className="ml-1.5 text-gray-300 dark:text-gray-600 font-normal normal-case">
+                                            ({form.attributes.length})
+                                        </span>
+                                    )}
+                                </p>
                                 <button
                                     type="button"
                                     onClick={addAttribute}
-                                    className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                                    className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                                 >
-                                    <PlusCircle size={14} />
-                                    Adaugă atribut
+                                    <Plus size={13} />
+                                    Adaugă
                                 </button>
                             </div>
-                            {form.attributes.length === 0 && (
-                                <p className="text-xs text-gray-400 dark:text-gray-500">Niciun atribut adăugat.</p>
-                            )}
-                            {form.attributes.map((attr, i) => (
-                                <div key={i} className="flex items-center gap-2">
-                                    <input
-                                        type="text"
-                                        value={attr.name}
-                                        onChange={(e) => updateAttribute(i, "name", e.target.value)}
-                                        placeholder="Nume (ex. Culoare)"
-                                        className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={attr.value}
-                                        onChange={(e) => updateAttribute(i, "value", e.target.value)}
-                                        placeholder="Valoare (ex. Roșu)"
-                                        className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => removeAttribute(i)}
-                                        className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
-                                    >
-                                        <MinusCircle size={16} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
 
-                        {error && (
-                            <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
-                        )}
+                            {form.attributes.length === 0 ? (
+                                <button
+                                    type="button"
+                                    onClick={addAttribute}
+                                    className="flex flex-col items-center justify-center gap-2 py-10 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                >
+                                    <SlidersHorizontal size={20} />
+                                    <span className="text-xs">Adaugă primul atribut</span>
+                                </button>
+                            ) : (
+                                <div className="flex flex-col gap-2 overflow-y-auto max-h-80 pr-0.5">
+                                    {form.attributes.map((attr, i) => (
+                                        <div key={i} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 flex flex-col gap-2">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
+                                                    Atribut {i + 1}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeAttribute(i)}
+                                                    className="p-0.5 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded"
+                                                >
+                                                    <X size={13} />
+                                                </button>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={attr.name}
+                                                onChange={(e) => updateAttribute(i, "name", e.target.value)}
+                                                placeholder="Nume (ex. Culoare)"
+                                                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+                                            />
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={attr.value}
+                                                    onChange={(e) => updateAttribute(i, "value", e.target.value)}
+                                                    placeholder="Valoare"
+                                                    className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+                                                />
+                                                <select
+                                                    value={attr.unitId ?? ""}
+                                                    onChange={(e) => updateAttribute(i, "unitId", e.target.value)}
+                                                    title="Unitate de măsură (opțional)"
+                                                    className="w-24 px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+                                                >
+                                                    <option value="">—</option>
+                                                    {groupedUnits.map(([measures, grpUnits]) => (
+                                                        <optgroup key={measures} label={measures}>
+                                                            {grpUnits.map((u) => (
+                                                                <option key={u.unitId} value={u.unitId}>
+                                                                    {u.symbol}
+                                                                </option>
+                                                            ))}
+                                                        </optgroup>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
+                        <div className="flex-1">
+                            {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
+                        </div>
                         <div className="flex items-center gap-3">
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
-                            >
-                                <Check size={15} />
-                                {saving ? "Se salvează..." : "Salvează"}
-                            </button>
                             <button
                                 onClick={closeForm}
                                 disabled={saving}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                                className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
                             >
-                                <X size={15} />
                                 Anulează
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
+                            >
+                                <Check size={14} />
+                                {saving ? "Se salvează..." : "Salvează"}
                             </button>
                         </div>
                     </div>
