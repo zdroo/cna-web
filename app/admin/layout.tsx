@@ -3,15 +3,17 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, FolderOpen, Layers, Ruler, ChevronRight, LogOut } from "lucide-react";
+import { LayoutDashboard, Package, FolderOpen, Layers, Ruler, ShoppingCart, BarChart2, ChevronRight, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const NAV = [
     { href: "/admin", label: "Panou de control", icon: LayoutDashboard, exact: true },
     { href: "/admin/categorii", label: "Categorii", icon: FolderOpen },
-    { href: "/admin/products", label: "Produse", icon: Package },
-    { href: "/admin/variante", label: "Variante", icon: Layers },
+    { href: "/admin/products", label: "Catalog", icon: Package },
+    { href: "/admin/variante", label: "Produse", icon: Layers },
     { href: "/admin/unitati", label: "Unități", icon: Ruler },
+    { href: "/admin/comenzi", label: "Comenzi", icon: ShoppingCart },
+    { href: "/admin/statistici", label: "Statistici", icon: BarChart2 },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -83,7 +83,7 @@ export default function AdminUnitatiPage() {
                 setUnits((prev) => prev.map((u) => u.unitId === editingId ? { ...u, ...data } : u));
             } else {
                 const { id } = await adminCreateMeasurementUnit(token, data);
-                setUnits((prev) => [...prev, { unitId: id, ...data, isSystem: false }]);
+                setUnits((prev) => [...prev, { unitId: id, ...data, isSystem: false, usageCount: 0 }]);
             }
             closeForm();
         } catch {

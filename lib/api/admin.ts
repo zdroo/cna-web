@@ -4,6 +4,123 @@ function authHeaders(token: string) {
     return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 }
 
+// ── Orders ──────────────────────────────────────────────────
+export interface OrderItemAdmin {
+    productVariantId: string;
+    quantity: number;
+    price: number;
+    total: number;
+    productName: string;
+    variantSlug: string;
+    productSlug: string;
+}
+
+export interface OrderAdmin {
+    orderId: string;
+    totalAmount: number;
+    status: number; // 0=Pending 1=Confirmed 2=Shipped 3=Delivered 4=Cancelled
+    items: OrderItemAdmin[];
+    isPaid: boolean;
+    createdAt: string;
+}
+
+export type RevenueGranularity = "Hour" | "Day" | "Week" | "Month" | "Year";
+
+export interface RevenuePoint {
+    label: string;
+    revenue: number;
+    orderCount: number;
+}
+
+export interface TopVariantPoint {
+    variantId: string;
+    productName: string;
+    variantSlug: string;
+    productSlug: string;
+    revenue: number;
+    quantitySold: number;
+    orderCount: number;
+}
+
+export interface MonthlyProductSalesRow {
+    variantId: string;
+    productName: string;
+    variantSlug: string;
+    monthlyRevenue: number[];
+    monthlyQuantity: number[];
+    totalRevenue: number;
+    totalQuantity: number;
+}
+
+export interface MonthlyProductSales {
+    monthLabels: string[];
+    rows: MonthlyProductSalesRow[];
+}
+
+export async function adminGetMonthlyProductSales(
+    token: string,
+    months: number = 12,
+    top: number = 5,
+): Promise<MonthlyProductSales> {
+    const res = await fetch(
+        `${BASE}/api/order/admin/monthly-product-sales?months=${months}&top=${top}`,
+        { headers: authHeaders(token), cache: "no-store" },
+    );
+    if (!res.ok) throw new Error("Failed to fetch monthly product sales");
+    return res.json();
+}
+
+export async function adminGetTopSellingVariants(
+    token: string,
+    top: number = 10,
+    days: number = 0,
+): Promise<TopVariantPoint[]> {
+    const qs = new URLSearchParams({ top: String(top) });
+    if (days > 0) qs.set("days", String(days));
+    const res = await fetch(`${BASE}/api/order/admin/top-variants?${qs}`, {
+        headers: authHeaders(token), cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to fetch top selling variants");
+    return res.json();
+}
+
+export async function adminGetRevenueStats(token: string, granularity: RevenueGranularity): Promise<RevenuePoint[]> {
+    const res = await fetch(`${BASE}/api/order/admin/revenue?granularity=${granularity}`, {
+        headers: authHeaders(token), cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to fetch revenue stats");
+    return res.json();
+}
+
+export async function adminGetOrders(
+    token: string,
+    params?: { status?: number; isPaid?: boolean }
+): Promise<OrderAdmin[]> {
+    const qs = new URLSearchParams();
+    if (params?.status !== undefined) qs.set("orderStatus", String(params.status));
+    if (params?.isPaid !== undefined) qs.set("isPaid", String(params.isPaid));
+    const url = `${BASE}/api/order/admin${qs.toString() ? "?" + qs : ""}`;
+    const res = await fetch(url, { headers: authHeaders(token), cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to fetch orders");
+    return res.json();
+}
+
+export async function adminUpdateOrderStatus(token: string, orderId: string, newStatus: number): Promise<void> {
+    const res = await fetch(`${BASE}/api/order/${orderId}/status`, {
+        method: "PUT", headers: authHeaders(token),
+        body: JSON.stringify({ newStatus }),
+    });
+    if (!res.ok) throw new Error("Failed to update order status");
+}
+
+export async function adminCancelOrder(token: string, orderId: string): Promise<void> {
+    const res = await fetch(`${BASE}/api/order/${orderId}/cancel`, {
+        method: "PUT", headers: authHeaders(token),
+        body: JSON.stringify({}),
+    });
+    if (!res.ok) throw new Error("Failed to cancel order");
+}
+
 // ── Categories ──────────────────────────────────────────────
 export async function adminGetCategories(token: string) {
     const res = await fetch(`${BASE}/api/categories`, { headers: authHeaders(token), cache: "no-store" });
@@ -128,6 +245,7 @@ export interface MeasurementUnit {
     symbol: string;
     measures: string;
     isSystem: boolean;
+    usageCount: number;
 }
 
 export async function adminGetMeasurementUnits(token: string): Promise<MeasurementUnit[]> {
@@ -158,6 +276,19 @@ export async function adminDeleteMeasurementUnit(token: string, unitId: string):
     if (!res.ok) throw new Error("Failed to delete measurement unit");
 }
 
+// ── Images ──────────────────────────────────────────────
+export async function adminUploadImage(token: string, file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${BASE}/api/images/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+    });
+    if (!res.ok) throw new Error("Failed to upload image");
+    return res.json();
+}
+
 // ── Variants ──────────────────────────────────────────────
 export interface VariantAttribute { name: string; value: string; unitId?: string; }
 
@@ -171,8 +302,8 @@ export async function adminGetVariants(token: string, productId?: string) {
 }
 
 export async function adminCreateVariant(token: string, data: {
-    productId: string; sku: string; price: number; description: string;
-    brand: string; quantity: number; variantAttributes: VariantAttribute[];
+    productId: string; sku: string; name: string; price: number; description: string;
+    brand: string; quantity: number; variantAttributes: VariantAttribute[]; imageUrls: string[];
 }) {
     const res = await fetch(`${BASE}/api/variants`, {
         method: "POST", headers: authHeaders(token), body: JSON.stringify(data),
@@ -183,7 +314,7 @@ export async function adminCreateVariant(token: string, data: {
 
 export async function adminUpdateVariant(token: string, variantId: string, data: {
     productId: string; sku: string; name: string; price: number; quantity: number;
-    variantAttributes: VariantAttribute[]; isActive: boolean;
+    variantAttributes: VariantAttribute[]; imageUrls: string[]; isActive: boolean;
 }) {
     const res = await fetch(`${BASE}/api/variants/${variantId}`, {
         method: "PUT", headers: authHeaders(token), body: JSON.stringify({ ...data, variantId }),
@@ -196,4 +327,12 @@ export async function adminDeleteVariant(token: string, variantId: string) {
         method: "DELETE", headers: authHeaders(token),
     });
     if (!res.ok) throw new Error("Failed to delete variant");
+}
+
+export async function adminDeleteVariantsBatch(token: string, variantIds: string[]) {
+    const res = await fetch(`${BASE}/api/variants/batch`, {
+        method: "DELETE", headers: authHeaders(token),
+        body: JSON.stringify({ variantIds }),
+    });
+    if (!res.ok) throw new Error("Batch delete failed");
 }

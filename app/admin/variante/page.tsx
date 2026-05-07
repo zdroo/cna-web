@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, X, Check, ExternalLink, SlidersHorizontal } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Plus, Pencil, Trash2, X, Check, ExternalLink, SlidersHorizontal, ImagePlus } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -10,7 +10,10 @@ import {
     adminCreateVariant,
     adminUpdateVariant,
     adminDeleteVariant,
+    adminDeleteVariantsBatch,
     adminGetMeasurementUnits,
+    adminCreateMeasurementUnit,
+    adminUploadImage,
     VariantAttribute,
     MeasurementUnit,
 } from "@/lib/api/admin";
@@ -18,12 +21,14 @@ import {
 interface Variant {
     variantId: string;
     sku: string;
+    name: string;
     price: number;
     stockQuantity: number;
     isActive: boolean;
     productName: string;
     productSlug: string;
     variantSlug: string;
+    imageUrls: string[];
 }
 
 interface Product {
@@ -34,24 +39,318 @@ interface Product {
 interface FormState {
     productId: string;
     sku: string;
+    name: string;
     price: string;
     quantity: string;
     brand: string;
     description: string;
     attributes: VariantAttribute[];
+    imageUrls: string[];
     isActive: boolean;
 }
 
 const emptyForm: FormState = {
     productId: "",
     sku: "",
+    name: "",
     price: "",
     quantity: "",
     brand: "",
     description: "",
     attributes: [],
+    imageUrls: [],
     isActive: true,
 };
+
+function ImageSection({
+    imageUrls,
+    onChange,
+    onUpload,
+}: {
+    imageUrls: string[];
+    onChange: (urls: string[]) => void;
+    onUpload: (file: File) => Promise<string>;
+}) {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+
+    async function handleFiles(files: FileList) {
+        setUploadError(null);
+        setUploading(true);
+        try {
+            const uploaded = await Promise.all(
+                Array.from(files).map((f) => onUpload(f))
+            );
+            onChange([...imageUrls, ...uploaded]);
+        } catch {
+            setUploadError("Uploadul a eșuat. Încearcă din nou.");
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    }
+
+    function removeUrl(index: number) {
+        onChange(imageUrls.filter((_, i) => i !== index));
+    }
+
+    return (
+        <div className="px-6 py-5 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Imagini
+                    {imageUrls.length > 0 && (
+                        <span className="ml-1.5 font-normal normal-case text-gray-300 dark:text-gray-600">
+                            ({imageUrls.length})
+                        </span>
+                    )}
+                </p>
+                {uploadError && (
+                    <p className="text-xs text-red-500 dark:text-red-400">{uploadError}</p>
+                )}
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+                {imageUrls.map((url, i) => (
+                    <div key={i} className="relative group flex-shrink-0">
+                        <div className={`w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 ${i === 0 ? "border-blue-400 dark:border-blue-500" : "border-transparent"}`}>
+                            <img
+                                src={url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            />
+                        </div>
+                        {i === 0 && (
+                            <span className="absolute bottom-0 left-0 right-0 bg-blue-500/80 text-white text-[9px] font-semibold text-center py-0.5 rounded-b-xl pointer-events-none">
+                                Primară
+                            </span>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => removeUrl(i)}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                            tabIndex={-1}
+                        >
+                            <X size={10} />
+                        </button>
+                    </div>
+                ))}
+
+                <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-1 text-gray-400 dark:text-gray-500 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50 flex-shrink-0"
+                >
+                    {uploading ? (
+                        <span className="text-[10px] text-center px-1">Se încarcă...</span>
+                    ) : (
+                        <>
+                            <ImagePlus size={18} />
+                            <span className="text-[10px]">Adaugă</span>
+                        </>
+                    )}
+                </button>
+
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => { if (e.target.files?.length) handleFiles(e.target.files); }}
+                />
+            </div>
+        </div>
+    );
+}
+
+function UnitCombobox({
+    unitId,
+    units,
+    onChange,
+    onAdd,
+}: {
+    unitId: string | undefined;
+    units: MeasurementUnit[];
+    onChange: (unitId: string | undefined) => void;
+    onAdd: (symbol: string) => Promise<string>;
+}) {
+    const selectedUnit = units.find((u) => u.unitId === unitId);
+    const [inputValue, setInputValue] = useState(selectedUnit?.symbol ?? "");
+    const [open, setOpen] = useState(false);
+    const [adding, setAdding] = useState(false);
+    const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setInputValue(selectedUnit?.symbol ?? "");
+    }, [unitId, units]);
+
+    useEffect(() => {
+        function onMouseDown(e: MouseEvent) {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", onMouseDown);
+        return () => document.removeEventListener("mousedown", onMouseDown);
+    }, []);
+
+    function openDropdown() {
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+        }
+        setOpen(true);
+    }
+
+    const query = inputValue.trim().toLowerCase();
+    const filtered = query
+        ? units.filter(
+              (u) =>
+                  u.symbol.toLowerCase().includes(query) ||
+                  u.name.toLowerCase().includes(query)
+          )
+        : units;
+
+    const exactMatch = units.find((u) => u.symbol.toLowerCase() === query);
+    const showAdd = query.length > 0 && !exactMatch;
+
+    const grouped = Object.entries(
+        filtered.reduce<Record<string, MeasurementUnit[]>>((acc, u) => {
+            (acc[u.measures] ??= []).push(u);
+            return acc;
+        }, {})
+    ).map(([measures, items]) => ({
+        measures,
+        items: [...items].sort((a, b) => b.usageCount - a.usageCount),
+        maxUsage: Math.max(...items.map((i) => i.usageCount)),
+    })).sort((a, b) => {
+        const diff = b.maxUsage - a.maxUsage;
+        return diff !== 0 ? diff : a.measures.localeCompare(b.measures);
+    });
+
+    async function handleAdd() {
+        if (!inputValue.trim() || adding) return;
+        setAdding(true);
+        try {
+            const newId = await onAdd(inputValue.trim());
+            onChange(newId);
+            setOpen(false);
+        } finally {
+            setAdding(false);
+        }
+    }
+
+    function select(u: MeasurementUnit) {
+        setInputValue(u.symbol);
+        onChange(u.unitId);
+        setOpen(false);
+    }
+
+    function clear() {
+        setInputValue("");
+        onChange(undefined);
+        setOpen(false);
+    }
+
+    const inputCls = "w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100";
+
+    return (
+        <div ref={containerRef} className="relative">
+            <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => {
+                    setInputValue(e.target.value);
+                    if (unitId) onChange(undefined);
+                    openDropdown();
+                }}
+                onFocus={openDropdown}
+                placeholder="Unitate de măsură (opțional)"
+                className={inputCls}
+                autoComplete="off"
+            />
+            {unitId && (
+                <button
+                    type="button"
+                    onClick={clear}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
+                    tabIndex={-1}
+                >
+                    <X size={12} />
+                </button>
+            )}
+
+            {open && dropdownPos && (
+                <div
+                    style={{ position: "fixed", top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9999 }}
+                    className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden"
+                >
+                    <div className="max-h-56 overflow-y-auto">
+                        {showAdd && (
+                            <button
+                                type="button"
+                                onClick={handleAdd}
+                                disabled={adding}
+                                className="w-full text-left px-3 py-2.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 disabled:opacity-50"
+                            >
+                                <Plus size={13} className="flex-shrink-0" />
+                                {adding ? "Se adaugă..." : `Adaugă „${inputValue.trim()}"`}
+                            </button>
+                        )}
+
+                        {filtered.length === 0 && !showAdd && (
+                            <p className="px-3 py-3 text-xs text-gray-400 dark:text-gray-500">
+                                Nicio unitate găsită.
+                            </p>
+                        )}
+
+                        {unitId && (
+                            <button
+                                type="button"
+                                onClick={clear}
+                                className="w-full text-left px-3 py-2 text-sm text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800"
+                            >
+                                — Fără unitate —
+                            </button>
+                        )}
+
+                        {grouped.map(({ measures, items: grpUnits }) => (
+                            <div key={measures}>
+                                <p className="px-3 pt-2.5 pb-1 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                                    {measures}
+                                </p>
+                                {grpUnits.map((u) => (
+                                    <button
+                                        key={u.unitId}
+                                        type="button"
+                                        onClick={() => select(u)}
+                                        className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2.5 transition-colors ${
+                                            unitId === u.unitId
+                                                ? "bg-gray-100 dark:bg-gray-800"
+                                                : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                                        }`}
+                                    >
+                                        <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded w-10 text-center flex-shrink-0">
+                                            {u.symbol}
+                                        </span>
+                                        <span className="text-gray-600 dark:text-gray-400 truncate">
+                                            {u.name}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function AdminVariantePage() {
     const { token } = useAuth();
@@ -65,6 +364,8 @@ export default function AdminVariantePage() {
     const [saving, setSaving] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [batchDeleting, setBatchDeleting] = useState(false);
 
     useEffect(() => {
         if (!token) return;
@@ -91,11 +392,13 @@ export default function AdminVariantePage() {
         setForm({
             productId: product?.productId ?? "",
             sku: variant.sku,
+            name: variant.name ?? "",
             price: String(variant.price),
             quantity: String(variant.stockQuantity),
             brand: "",
             description: "",
             attributes: [],
+            imageUrls: variant.imageUrls ?? [],
             isActive: variant.isActive,
         });
         setError(null);
@@ -129,17 +432,27 @@ export default function AdminVariantePage() {
         });
     }
 
-    const groupedUnits = Object.entries(
-        units.reduce<Record<string, MeasurementUnit[]>>((acc, u) => {
-            (acc[u.measures] ??= []).push(u);
-            return acc;
-        }, {})
-    ).sort(([a], [b]) => a.localeCompare(b));
+    async function handleUploadImage(file: File): Promise<string> {
+        if (!token) throw new Error("Not authenticated");
+        const { url } = await adminUploadImage(token, file);
+        return url;
+    }
+
+    async function handleAddUnit(symbol: string): Promise<string> {
+        if (!token) throw new Error("Not authenticated");
+        const { id } = await adminCreateMeasurementUnit(token, {
+            name: symbol,
+            symbol,
+            measures: "Personalizat",
+        });
+        setUnits((prev) => [...prev, { unitId: id, name: symbol, symbol, measures: "Personalizat", isSystem: false, usageCount: 0 }]);
+        return id;
+    }
 
     async function handleSave() {
         if (!token) return;
-        if (!form.productId || !form.sku.trim() || !form.price || !form.quantity) {
-            setError("Completează câmpurile obligatorii: produs, SKU, preț și cantitate.");
+        if (!form.productId || !form.sku.trim() || !form.name.trim() || !form.price || !form.quantity) {
+            setError("Completează câmpurile obligatorii: produs, nume, SKU, preț și cantitate.");
             return;
         }
         setSaving(true);
@@ -151,35 +464,26 @@ export default function AdminVariantePage() {
                 await adminUpdateVariant(token, editingId, {
                     productId: form.productId,
                     sku: form.sku,
-                    name: form.sku,
+                    name: form.name,
                     price,
                     quantity,
                     variantAttributes: form.attributes,
+                    imageUrls: form.imageUrls.filter(Boolean),
                     isActive: form.isActive,
                 });
-                setVariants((prev) =>
-                    prev.map((v) =>
-                        v.variantId === editingId
-                            ? {
-                                ...v,
-                                sku: form.sku,
-                                price,
-                                stockQuantity: quantity,
-                                isActive: form.isActive,
-                                productName: products.find((p) => p.productId === form.productId)?.name ?? v.productName,
-                            }
-                            : v
-                    )
-                );
+                const updated = await adminGetVariants(token);
+                setVariants(updated);
             } else {
                 await adminCreateVariant(token, {
                     productId: form.productId,
                     sku: form.sku,
+                    name: form.name,
                     price,
                     description: form.description,
                     brand: form.brand,
                     quantity,
                     variantAttributes: form.attributes,
+                    imageUrls: form.imageUrls.filter(Boolean),
                 });
                 const updated = await adminGetVariants(token);
                 setVariants(updated);
@@ -200,12 +504,41 @@ export default function AdminVariantePage() {
         try {
             await adminDeleteVariant(token, variant.variantId);
             setVariants((prev) => prev.filter((v) => v.variantId !== variant.variantId));
+            setSelected((prev) => { const s = new Set(prev); s.delete(variant.variantId); return s; });
         } catch (e) {
             console.error(e);
             alert("Ștergerea a eșuat.");
         } finally {
             setDeletingId(null);
         }
+    }
+
+    async function handleBatchDelete() {
+        if (!token || selected.size === 0) return;
+        if (!window.confirm(`Ștergi ${selected.size} ${selected.size === 1 ? "variantă" : "variante"}?`)) return;
+        setBatchDeleting(true);
+        try {
+            await adminDeleteVariantsBatch(token, Array.from(selected));
+            setVariants((prev) => prev.filter((v) => !selected.has(v.variantId)));
+            setSelected(new Set());
+        } catch (e) {
+            console.error(e);
+            alert("Ștergerea în lot a eșuat.");
+        } finally {
+            setBatchDeleting(false);
+        }
+    }
+
+    function toggleSelect(id: string) {
+        setSelected((prev) => {
+            const s = new Set(prev);
+            s.has(id) ? s.delete(id) : s.add(id);
+            return s;
+        });
+    }
+
+    function toggleSelectAll() {
+        setSelected(selected.size === variants.length ? new Set() : new Set(variants.map((v) => v.variantId)));
     }
 
     return (
@@ -217,13 +550,25 @@ export default function AdminVariantePage() {
                     <p className="text-gray-500 dark:text-gray-400 mt-1">{variants.length} variante în catalog</p>
                 </div>
                 {!showForm && (
-                    <button
-                        onClick={openCreate}
-                        className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors"
-                    >
-                        <Plus size={16} />
-                        Variantă nouă
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {selected.size > 0 && (
+                            <button
+                                onClick={handleBatchDelete}
+                                disabled={batchDeleting}
+                                className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+                            >
+                                <Trash2 size={15} />
+                                {batchDeleting ? "Se șterge..." : `Șterge selecția (${selected.size})`}
+                            </button>
+                        )}
+                        <button
+                            onClick={openCreate}
+                            className="flex items-center gap-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors"
+                        >
+                            <Plus size={16} />
+                            Variantă nouă
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -262,6 +607,17 @@ export default function AdminVariantePage() {
                                         <option key={p.productId} value={p.productId}>{p.name}</option>
                                     ))}
                                 </select>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Nume <span className="text-red-500">*</span></label>
+                                <input
+                                    type="text"
+                                    value={form.name}
+                                    onChange={(e) => setField("name", e.target.value)}
+                                    placeholder="ex. Tricou roșu mărime M"
+                                    className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -388,38 +744,32 @@ export default function AdminVariantePage() {
                                                 placeholder="Nume (ex. Culoare)"
                                                 className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
                                             />
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={attr.value}
-                                                    onChange={(e) => updateAttribute(i, "value", e.target.value)}
-                                                    placeholder="Valoare"
-                                                    className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-                                                />
-                                                <select
-                                                    value={attr.unitId ?? ""}
-                                                    onChange={(e) => updateAttribute(i, "unitId", e.target.value)}
-                                                    title="Unitate de măsură (opțional)"
-                                                    className="w-24 px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-                                                >
-                                                    <option value="">—</option>
-                                                    {groupedUnits.map(([measures, grpUnits]) => (
-                                                        <optgroup key={measures} label={measures}>
-                                                            {grpUnits.map((u) => (
-                                                                <option key={u.unitId} value={u.unitId}>
-                                                                    {u.symbol}
-                                                                </option>
-                                                            ))}
-                                                        </optgroup>
-                                                    ))}
-                                                </select>
-                                            </div>
+                                            <input
+                                                type="text"
+                                                value={attr.value}
+                                                onChange={(e) => updateAttribute(i, "value", e.target.value)}
+                                                placeholder="Valoare"
+                                                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+                                            />
+                                            <UnitCombobox
+                                                unitId={attr.unitId}
+                                                units={units}
+                                                onChange={(uid) => updateAttribute(i, "unitId", uid ?? "")}
+                                                onAdd={handleAddUnit}
+                                            />
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
                     </div>
+
+                    {/* Images */}
+                    <ImageSection
+                        imageUrls={form.imageUrls}
+                        onChange={(urls) => setField("imageUrls", urls)}
+                        onUpload={handleUploadImage}
+                    />
 
                     {/* Footer */}
                     <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
@@ -456,7 +806,17 @@ export default function AdminVariantePage() {
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-gray-100 dark:border-gray-800 text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">
+                                <th className="px-4 py-4 w-10">
+                                    <input
+                                        type="checkbox"
+                                        checked={variants.length > 0 && selected.size === variants.length}
+                                        onChange={toggleSelectAll}
+                                        className="w-4 h-4 rounded accent-gray-900 dark:accent-gray-100"
+                                    />
+                                </th>
+                                <th className="px-4 py-4 w-14"></th>
                                 <th className="px-6 py-4 font-semibold">Produs</th>
+                                <th className="px-6 py-4 font-semibold">Nume</th>
                                 <th className="px-6 py-4 font-semibold">SKU</th>
                                 <th className="px-6 py-4 font-semibold">Preț</th>
                                 <th className="px-6 py-4 font-semibold">Stoc</th>
@@ -466,9 +826,36 @@ export default function AdminVariantePage() {
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                             {variants.map((variant) => (
-                                <tr key={variant.variantId} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                <tr key={variant.variantId} className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${selected.has(variant.variantId) ? "bg-gray-50 dark:bg-gray-800/60" : ""}`}>
+                                    <td className="px-4 py-3">
+                                        <input
+                                            type="checkbox"
+                                            checked={selected.has(variant.variantId)}
+                                            onChange={() => toggleSelect(variant.variantId)}
+                                            className="w-4 h-4 rounded accent-gray-900 dark:accent-gray-100"
+                                        />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                                            {variant.imageUrls?.[0] ? (
+                                                <img
+                                                    src={variant.imageUrls[0]}
+                                                    alt=""
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <ImagePlus size={14} className="text-gray-300 dark:text-gray-600" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4">
                                         <span className="font-medium text-gray-900 dark:text-gray-100">{variant.productName}</span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="text-gray-800 dark:text-gray-200">{variant.name}</span>
                                         <span className="text-gray-400 dark:text-gray-500 text-xs block mt-0.5">{variant.variantSlug}</span>
                                     </td>
                                     <td className="px-6 py-4 font-mono text-xs text-gray-700 dark:text-gray-300">{variant.sku}</td>
