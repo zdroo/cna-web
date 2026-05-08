@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import PageSpinner from "@/components/ui/PageSpinner";
 import { Plus, Pencil, Trash2, ExternalLink, Upload, FileText, AlertCircle, CheckCircle2, Download, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -335,7 +336,7 @@ export default function AdminProductsPage() {
             {/* Table */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="py-16 text-center text-gray-400 dark:text-gray-500">Se încarcă...</div>
+                    <PageSpinner className="py-16" />
                 ) : products.length === 0 ? (
                     <div className="py-16 text-center text-gray-400 dark:text-gray-500">Niciun produs găsit.</div>
                 ) : (
@@ -380,7 +381,7 @@ export default function AdminProductsPage() {
                                     <td className="px-4 py-4">
                                         <div className="flex items-center justify-end gap-2">
                                             <Link
-                                                href={`/products/${product.productSlug}`}
+                                                href={`/produse/${product.productSlug}`}
                                                 target="_blank"
                                                 className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                                                 title="Vezi în magazin"

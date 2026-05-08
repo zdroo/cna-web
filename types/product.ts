@@ -27,6 +27,7 @@ export interface ProductVariant {
     price: number;
     stockQuantity: number;
     averageRating: number | null;
+    reviewsCount: number;
     primaryImageUrl: string | null;
     imageUrls: string[];
     attributes: Record<string, string>;
@@ -65,6 +66,7 @@ export interface Review {
 export interface VariantsFilter {
     searchText?: string;
     categoryId?: string;
+    productId?: string;
     brand?: string;
     onlyActive?: boolean;
     onlyInStock?: boolean;

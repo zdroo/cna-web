@@ -70,7 +70,7 @@ export default function HomeContent({ categories, allVariants }: Props) {
                             : "Produse populare"}
                     </h2>
                     {!selectedCategoryId && !selectedProductId && (
-                        <Link href="/products" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                        <Link href="/produse" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                             Vezi toate →
                         </Link>
                     )}

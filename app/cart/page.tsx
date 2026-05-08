@@ -26,7 +26,7 @@ export default function CartPage() {
                 <ShoppingCart size={48} className="text-gray-300" />
                 <p className="text-lg font-medium">Coșul tău e gol</p>
                 <Link
-                    href="/products"
+                    href="/produse"
                     className="mt-2 bg-gray-900 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
                 >
                     Explorează produse
@@ -61,7 +61,7 @@ export default function CartPage() {
                         <div key={item.cartItemId} className="bg-white dark:bg-gray-900 dark:border dark:border-gray-800 rounded-xl shadow-sm p-4 flex gap-4">
 
                             {/* Image */}
-                            <Link href={`/products/${item.productSlug}/${item.variantSlug}`}>
+                            <Link href={`/produse/${item.productSlug}/${item.variantSlug}`}>
                                 <div className="relative w-24 h-24 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
                                     {item.primaryImageUrl ? (
                                         <Image
@@ -81,7 +81,7 @@ export default function CartPage() {
                                 {item.brand && (
                                     <p className="text-xs text-gray-400 uppercase tracking-wide">{item.brand}</p>
                                 )}
-                                <Link href={`/products/${item.productSlug}/${item.variantSlug}`}>
+                                <Link href={`/produse/${item.productSlug}/${item.variantSlug}`}>
                                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                                         {item.name}
                                     </h3>
@@ -153,7 +153,7 @@ export default function CartPage() {
                     </button>
 
                     <Link
-                        href="/products"
+                        href="/produse"
                         className="text-center text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
                         Continuă cumpărăturile

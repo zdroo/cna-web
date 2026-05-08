@@ -28,7 +28,7 @@ export default async function ConfirmationPage({ params }: Props) {
 
             <div className="flex gap-3 mt-2">
                 <Link
-                    href="/products"
+                    href="/produse"
                     className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-700 transition-colors text-sm"
                 >
                     Continuă cumpărăturile

@@ -1,7 +1,8 @@
 import { getCategoriesWithProducts } from "@/lib/api/categories";
 import { getVariantsFiltered } from "@/lib/api/products";
-import SearchBar from "@/components/home/SearchBar";
-import HomeContent from "@/components/home/HomeContent";
+import HeroSection from "@/components/home/HeroSection";
+import FeaturedCategories from "@/components/home/FeaturedCategories";
+import VariantCard from "@/components/products/VariantCard";
 import Link from "next/link";
 
 export default async function HomePage() {
@@ -10,33 +11,37 @@ export default async function HomePage() {
         getVariantsFiltered({ onlyActive: true }),
     ]);
 
+    const popular = allVariants.slice(0, 8);
+
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
 
-            <SearchBar />
+            <HeroSection />
 
-            <div className="relative bg-gray-900 text-white rounded-2xl overflow-hidden px-10 py-12">
-                <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700" />
-                <div className="relative z-10 max-w-xl">
-                    <p className="text-sm font-semibold tracking-widest text-gray-400 uppercase mb-3">
-                        Colecție 2026
-                    </p>
-                    <h1 className="text-4xl font-bold leading-tight mb-4">
-                        Descoperă produsele noastre
-                    </h1>
-                    <p className="text-gray-300 mb-6">
-                        Calitate premium, prețuri competitive.
-                    </p>
+            <FeaturedCategories categories={categories} />
+
+            <section>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        Produse populare
+                    </h2>
                     <Link
-                        href="/products"
-                        className="inline-block bg-white text-gray-900 px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                        href="/produse"
+                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                     >
-                        Toate produsele
+                        Vezi toate →
                     </Link>
                 </div>
-            </div>
-
-            <HomeContent categories={categories} allVariants={allVariants} />
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {popular.map((variant) => (
+                        <VariantCard
+                            key={variant.variantId}
+                            variant={variant}
+                            productSlug={variant.productSlug}
+                        />
+                    ))}
+                </div>
+            </section>
 
         </div>
     );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, X, Check, Lock } from "lucide-react";
+import PageSpinner from "@/components/ui/PageSpinner";
 import { useAuth } from "@/context/AuthContext";
 import {
     MeasurementUnit,
@@ -190,7 +191,7 @@ export default function AdminUnitatiPage() {
             )}
 
             {loading ? (
-                <div className="py-16 text-center text-gray-400 dark:text-gray-500">Se încarcă...</div>
+                <PageSpinner className="py-16" />
             ) : (
                 <div className="flex flex-col gap-4">
                     {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([measures, groupUnits]) => (

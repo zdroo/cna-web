@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Plus, Pencil, Trash2, X, Check, ExternalLink, SlidersHorizontal, ImagePlus } from "lucide-react";
+import PageSpinner from "@/components/ui/PageSpinner";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -799,7 +800,7 @@ export default function AdminVariantePage() {
 
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="py-16 text-center text-gray-400 dark:text-gray-500">Se încarcă...</div>
+                    <PageSpinner className="py-16" />
                 ) : variants.length === 0 ? (
                     <div className="py-16 text-center text-gray-400 dark:text-gray-500">Nicio variantă găsită.</div>
                 ) : (
@@ -873,7 +874,7 @@ export default function AdminVariantePage() {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center justify-end gap-2">
                                             <Link
-                                                href={`/products/${variant.productSlug}/${variant.variantSlug}`}
+                                                href={`/produse/${variant.productSlug}/${variant.variantSlug}`}
                                                 target="_blank"
                                                 className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                                                 title="Vezi în magazin"

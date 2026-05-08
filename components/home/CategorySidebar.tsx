@@ -71,7 +71,7 @@ export default function CategorySidebar({ categories, selectedCategoryId, onCate
                                             category.products.map((product) => (
                                                 <Link
                                                     key={product.productId}
-                                                    href={`/products/${product.productSlug}`}
+                                                    href={`/produse/${product.productSlug}`}
                                                     className="block px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors truncate"
                                                 >
                                                     {product.name}

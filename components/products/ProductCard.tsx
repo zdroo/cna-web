@@ -6,7 +6,7 @@ import { ProductSummary } from "@/types/product";
 export default function ProductCard({ product }: { product: ProductSummary }) {
     return (
         <Link
-            href={`/products/${product.productSlug}`}
+            href={`/produse/${product.productSlug}`}
             className="group bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow dark:border dark:border-gray-800"
         >
             {/* Image */}

@@ -32,6 +32,7 @@ export async function getVariantsFiltered(filter: VariantsFilter = {}): Promise<
 
     if (filter.searchText) params.append("searchText", filter.searchText);
     if (filter.categoryId) params.append("categoryId", filter.categoryId);
+    if (filter.productId) params.append("productId", filter.productId);
     if (filter.brand) params.append("brand", filter.brand);
     if (filter.onlyActive) params.append("onlyActive", "true");
     if (filter.onlyInStock) params.append("onlyInStock", "true");

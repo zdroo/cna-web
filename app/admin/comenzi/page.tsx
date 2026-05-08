@@ -1,11 +1,13 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import PageSpinner from "@/components/ui/PageSpinner";
 import { ChevronDown, ChevronUp, Package } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
     adminGetOrders,
     adminUpdateOrderStatus,
+    adminDispatchOrder,
     adminCancelOrder,
     type OrderAdmin,
 } from "@/lib/api/admin";
@@ -80,6 +82,22 @@ export default function AdminComenziPage() {
         }
     }
 
+    async function handleDispatch(orderId: string) {
+        if (!token) return;
+        setUpdating(orderId);
+        try {
+            const { awbNumber, carrierName } = await adminDispatchOrder(token, orderId);
+            setOrders((prev) =>
+                prev.map((o) => o.orderId === orderId ? { ...o, status: 2, awbNumber, carrierName } : o)
+            );
+        } catch (e) {
+            console.error(e);
+            alert("Expedierea a eșuat.");
+        } finally {
+            setUpdating(null);
+        }
+    }
+
     async function handleCancel(orderId: string) {
         if (!token) return;
         if (!window.confirm("Anulezi această comandă? Stocul va fi refăcut.")) return;
@@ -142,7 +160,7 @@ export default function AdminComenziPage() {
             {/* Table */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="py-16 text-center text-gray-400 dark:text-gray-500">Se încarcă...</div>
+                    <PageSpinner className="py-16" />
                 ) : orders.length === 0 ? (
                     <div className="py-16 text-center text-gray-400 dark:text-gray-500">Nicio comandă găsită.</div>
                 ) : (
@@ -211,11 +229,11 @@ export default function AdminComenziPage() {
                                                 {order.status === 1 && (
                                                     <>
                                                         <button
-                                                            onClick={() => handleStatusUpdate(order.orderId, 2)}
+                                                            onClick={() => handleDispatch(order.orderId)}
                                                             disabled={updating === order.orderId}
                                                             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900 transition-colors disabled:opacity-50"
                                                         >
-                                                            Expediază
+                                                            {updating === order.orderId ? "Se expediază..." : "Expediază"}
                                                         </button>
                                                         <button
                                                             onClick={() => handleCancel(order.orderId)}
@@ -263,7 +281,20 @@ export default function AdminComenziPage() {
                                                             </div>
                                                         ))}
                                                     </div>
-                                                    <div className="flex justify-end pt-2 border-t border-gray-200 dark:border-gray-700 mt-1">
+                                                    <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700 mt-1">
+                                                        {order.awbNumber ? (
+                                                            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                                                                AWB:
+                                                                {order.trackingUrl ? (
+                                                                    <a href={order.trackingUrl} target="_blank" rel="noopener noreferrer" className="font-mono font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                                                                        {order.awbNumber}
+                                                                    </a>
+                                                                ) : (
+                                                                    <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">{order.awbNumber}</span>
+                                                                )}
+                                                                {order.carrierName && <span className="text-gray-400 dark:text-gray-500">({order.carrierName})</span>}
+                                                            </span>
+                                                        ) : <span />}
                                                         <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                                                             Total: {order.totalAmount.toFixed(2)} lei
                                                         </span>

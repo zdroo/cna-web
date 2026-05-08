@@ -8,26 +8,26 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700" />
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-start justify-center px-12 py-32 max-w-2xl">
-        <span className="text-sm font-semibold tracking-widest text-gray-400 uppercase mb-4">
+      <div className="relative z-10 flex flex-col items-start justify-center px-10 py-14 max-w-xl">
+        <span className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">
           Colecție Nouă 2026
         </span>
-        <h1 className="text-5xl font-bold leading-tight mb-6">
+        <h1 className="text-3xl font-bold leading-tight mb-3">
           Descoperă Stilul Tău Perfect
         </h1>
-        <p className="text-lg text-gray-300 mb-8">
+        <p className="text-sm text-gray-300 mb-6">
           Explorează colecția noastră de produse premium. Calitate în care poți avea încredere, stil pe care îl vei adora.
         </p>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link
-            href="/products"
-            className="bg-white text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            href="/produse"
+            className="bg-white text-gray-900 px-6 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
           >
             Cumpără Acum
           </Link>
           <Link
             href="/categories"
-            className="border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors"
+            className="border border-white text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-white hover:text-gray-900 transition-colors"
           >
             Vezi Categorii
           </Link>

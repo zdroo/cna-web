@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Plus, Pencil, Trash2, X, Check, Upload, FileText, AlertCircle, CheckCircle2, Download } from "lucide-react";
+import PageSpinner from "@/components/ui/PageSpinner";
 import { useAuth } from "@/context/AuthContext";
 import {
     adminGetCategories,
@@ -476,7 +477,7 @@ export default function AdminCategoriiPage() {
             {/* Table */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="py-16 text-center text-gray-400 dark:text-gray-500">Se încarcă...</div>
+                    <PageSpinner className="py-16" />
                 ) : categories.length === 0 ? (
                     <div className="py-16 text-center text-gray-400 dark:text-gray-500">Nicio categorie găsită.</div>
                 ) : (

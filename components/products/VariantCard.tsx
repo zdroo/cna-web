@@ -21,7 +21,7 @@ export default function VariantCard({ variant, productSlug }: { variant: Product
         <div className="bg-white dark:bg-gray-900 dark:border dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
 
             {/* Image */}
-            <Link href={`/products/${productSlug}/${variant.variantSlug}`} className="rounded-t-xl overflow-hidden block">
+            <Link href={`/produse/${productSlug}/${variant.variantSlug}`} className="rounded-t-xl overflow-hidden block">
                 <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
                     {imageUrl ? (
                         <Image
@@ -48,7 +48,7 @@ export default function VariantCard({ variant, productSlug }: { variant: Product
                     <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">{variant.brand}</p>
                 )}
 
-                <Link href={`/products/${productSlug}/${variant.variantSlug}`}>
+                <Link href={`/produse/${productSlug}/${variant.variantSlug}`}>
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-colors line-clamp-2 text-sm leading-snug">
                         {variant.name}
                     </h3>
@@ -66,7 +66,7 @@ export default function VariantCard({ variant, productSlug }: { variant: Product
                     ))}
                     {hiddenCount > 0 && (
                         <Link
-                            href={`/products/${productSlug}/${variant.variantSlug}`}
+                            href={`/produse/${productSlug}/${variant.variantSlug}`}
                             className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors h-fit"
                         >
                             +{hiddenCount} mai multe

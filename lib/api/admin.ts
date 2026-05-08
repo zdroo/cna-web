@@ -22,6 +22,9 @@ export interface OrderAdmin {
     items: OrderItemAdmin[];
     isPaid: boolean;
     createdAt: string;
+    awbNumber?: string;
+    carrierName?: string;
+    trackingUrl?: string;
 }
 
 export type RevenueGranularity = "Hour" | "Day" | "Week" | "Month" | "Year";
@@ -113,10 +116,17 @@ export async function adminUpdateOrderStatus(token: string, orderId: string, new
     if (!res.ok) throw new Error("Failed to update order status");
 }
 
-export async function adminCancelOrder(token: string, orderId: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/order/${orderId}/cancel`, {
+export async function adminDispatchOrder(token: string, orderId: string): Promise<{ awbNumber: string; carrierName: string }> {
+    const res = await fetch(`${BASE}/api/order/admin/${orderId}/dispatch`, {
         method: "PUT", headers: authHeaders(token),
-        body: JSON.stringify({}),
+    });
+    if (!res.ok) throw new Error("Failed to dispatch order");
+    return res.json();
+}
+
+export async function adminCancelOrder(token: string, orderId: string): Promise<void> {
+    const res = await fetch(`${BASE}/api/order/admin/${orderId}/cancel`, {
+        method: "PUT", headers: authHeaders(token),
     });
     if (!res.ok) throw new Error("Failed to cancel order");
 }

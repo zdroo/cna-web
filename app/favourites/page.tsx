@@ -30,7 +30,7 @@ export default function FavouritesPage() {
                     <Heart size={48} className="text-gray-300 dark:text-gray-600" />
                     <p className="text-lg font-medium">Nu ai niciun produs la favorite</p>
                     <Link
-                        href="/products"
+                        href="/produse"
                         className="mt-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-6 py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-300 transition-colors text-sm"
                     >
                         Explorează produse
@@ -43,7 +43,7 @@ export default function FavouritesPage() {
                             key={item.favoriteItemId}
                             className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-transparent dark:border-gray-800 overflow-hidden w-56 flex flex-col"
                         >
-                            <Link href={`/products/${item.productSlug}/${item.variantSlug}`}>
+                            <Link href={`/produse/${item.productSlug}/${item.variantSlug}`}>
                                 <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
                                     {item.primaryImageUrl ? (
                                         <Image
@@ -67,7 +67,7 @@ export default function FavouritesPage() {
                                 {item.brand && (
                                     <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">{item.brand}</p>
                                 )}
-                                <Link href={`/products/${item.productSlug}/${item.variantSlug}`}>
+                                <Link href={`/produse/${item.productSlug}/${item.variantSlug}`}>
                                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-400 transition-colors line-clamp-2">
                                         {item.name}
                                     </h3>

@@ -19,6 +19,9 @@ export interface Order {
     items: OrderItem[];
     isPaid: boolean;
     createdAt: string;
+    awbNumber?: string;
+    carrierName?: string;
+    trackingUrl?: string;
 }
 
 export async function getOrders(token: string): Promise<Order[]> {
