@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { getFavorites, addFavorite, removeFavorite } from "@/lib/api/favorites";
+import { useAuth } from "@/context/AuthContext";
 import { FavoriteItem } from "@/types/favorite";
 
 interface FavoritesContextType {
@@ -24,35 +25,67 @@ function getOrCreateSessionId(): string {
 }
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
+    const { user, token, isLoaded: authLoaded } = useAuth();
     const [favorites, setFavorites] = useState<Map<string, string>>(new Map());
     const [items, setItems] = useState<FavoriteItem[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    useEffect(() => {
-        const sessionId = getOrCreateSessionId();
-        getFavorites(sessionId)
-            .then((data) => {
-                setItems(data);
-                setFavorites(new Map(data.map((i) => [i.productVariantId, i.favoriteItemId])));
-            })
-            .catch(console.error)
-            .finally(() => setIsLoaded(true));
-    }, []);
+    function applyItems(data: FavoriteItem[]) {
+        setItems(data);
+        setFavorites(new Map(data.map((i) => [i.productVariantId, i.favoriteItemId])));
+    }
 
-    const toggle = useCallback(async (variantId: string) => {
-        const existingId = favorites.get(variantId);
-        if (existingId) {
-            await removeFavorite(existingId);
-            setFavorites((prev) => { const m = new Map(prev); m.delete(variantId); return m; });
-            setItems((prev) => prev.filter((i) => i.productVariantId !== variantId));
-        } else {
-            const sessionId = getOrCreateSessionId();
-            const favoriteItemId = await addFavorite(variantId, sessionId);
-            setFavorites((prev) => new Map(prev).set(variantId, favoriteItemId));
-            const updated = await getFavorites(sessionId);
-            setItems(updated);
+    useEffect(() => {
+        if (!authLoaded) return;
+
+        const currentToken = token;
+
+        async function load() {
+            try {
+                if (currentToken) {
+                    // Drop the anonymous session so logout shows empty favorites
+                    localStorage.removeItem("sessionId");
+                    const data = await getFavorites(currentToken, undefined);
+                    applyItems(data);
+                } else {
+                    applyItems([]);
+                    const sessionId = getOrCreateSessionId();
+                    const data = await getFavorites(undefined, sessionId);
+                    applyItems(data);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setIsLoaded(true);
+            }
         }
-    }, [favorites]);
+
+        load();
+    }, [authLoaded, token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const toggle = useCallback(
+        async (variantId: string) => {
+            const existingId = favorites.get(variantId);
+            if (existingId) {
+                await removeFavorite(existingId);
+                setFavorites((prev) => { const m = new Map(prev); m.delete(variantId); return m; });
+                setItems((prev) => prev.filter((i) => i.productVariantId !== variantId));
+            } else {
+                const sessionId = getOrCreateSessionId();
+                const favoriteItemId = await addFavorite(
+                    variantId,
+                    token ?? undefined,
+                    token ? undefined : sessionId
+                );
+                setFavorites((prev) => new Map(prev).set(variantId, favoriteItemId));
+                const updated = token
+                    ? await getFavorites(token, undefined)
+                    : await getFavorites(undefined, sessionId);
+                applyItems(updated);
+            }
+        },
+        [favorites, token]
+    );
 
     const removeItem = useCallback(async (favoriteItemId: string, variantId: string) => {
         await removeFavorite(favoriteItemId);

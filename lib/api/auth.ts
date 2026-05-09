@@ -44,7 +44,7 @@ export async function refreshToken(token: string): Promise<AuthResponse> {
     return response.json();
 }
 
-export async function register(email: string, password: string): Promise<AuthResponse> {
+export async function register(email: string, password: string): Promise<void> {
     const response = await fetch(`${BASE}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,8 +55,6 @@ export async function register(email: string, password: string): Promise<AuthRes
         const error = await response.json().catch(() => ({}));
         throw new Error(error?.message ?? "Înregistrare eșuată");
     }
-
-    return response.json();
 }
 
 export async function confirmEmail(token: string): Promise<void> {

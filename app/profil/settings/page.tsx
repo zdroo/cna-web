@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserProfile, updateProfile, changePassword, UserProfile } from "@/lib/api/user";
-import { ArrowLeft, Loader2, User, Lock, CheckCircle } from "lucide-react";
+import { getUserProfile, updateProfile, UserProfile } from "@/lib/api/user";
+import { forgotPassword } from "@/lib/api/auth";
+import { ArrowLeft, Loader2, User, Lock, CheckCircle, Mail } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
@@ -17,12 +18,9 @@ export default function SettingsPage() {
     const [profileSuccess, setProfileSuccess] = useState(false);
     const [profileError, setProfileError] = useState<string | null>(null);
 
-    const [currentPassword, setCurrentPassword] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [passwordSaving, setPasswordSaving] = useState(false);
-    const [passwordSuccess, setPasswordSuccess] = useState(false);
-    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [resetSending, setResetSending] = useState(false);
+    const [resetSent, setResetSent] = useState(false);
+    const [resetError, setResetError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!isLoaded || !user || !token) return;
@@ -52,30 +50,18 @@ export default function SettingsPage() {
         }
     }
 
-    async function handlePasswordSave(e: React.FormEvent) {
-        e.preventDefault();
-        setPasswordError(null);
-        setPasswordSuccess(false);
-        if (newPassword !== confirmPassword) {
-            setPasswordError("Parolele nu coincid.");
-            return;
-        }
-        if (newPassword.length < 6) {
-            setPasswordError("Parola nouă trebuie să aibă cel puțin 6 caractere.");
-            return;
-        }
-        setPasswordSaving(true);
+    async function handleSendResetEmail() {
+        if (!profile?.email) return;
+        setResetSending(true);
+        setResetError(null);
+        setResetSent(false);
         try {
-            await changePassword(token!, currentPassword, newPassword);
-            setPasswordSuccess(true);
-            setCurrentPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-            setTimeout(() => setPasswordSuccess(false), 3000);
-        } catch (err: unknown) {
-            setPasswordError(err instanceof Error ? err.message : "Eroare necunoscută");
+            await forgotPassword(profile.email);
+            setResetSent(true);
+        } catch {
+            setResetError("Nu s-a putut trimite emailul. Încearcă din nou.");
         } finally {
-            setPasswordSaving(false);
+            setResetSending(false);
         }
     }
 
@@ -96,7 +82,7 @@ export default function SettingsPage() {
                 </div>
             ) : (
                 <>
-                    {/* Profil */}
+                    {/* Personal info */}
                     <form
                         onSubmit={handleProfileSave}
                         className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 flex flex-col gap-4"
@@ -134,36 +120,49 @@ export default function SettingsPage() {
                         </button>
                     </form>
 
-                    {/* Schimbare parolă */}
+                    {/* Password reset via email */}
                     {profile && !profile.isGoogleUser && (
-                        <form
-                            onSubmit={handlePasswordSave}
-                            className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 flex flex-col gap-4"
-                        >
+                        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 flex flex-col gap-4">
                             <div className="flex items-center gap-2 mb-1">
                                 <Lock size={18} className="text-gray-500 dark:text-gray-400" />
                                 <h2 className="font-semibold text-gray-900 dark:text-gray-100">Schimbă parola</h2>
                             </div>
 
-                            <InputField label="Parola curentă" value={currentPassword} onChange={setCurrentPassword} type="password" required />
-                            <InputField label="Parola nouă" value={newPassword} onChange={setNewPassword} type="password" required />
-                            <InputField label="Confirmă parola nouă" value={confirmPassword} onChange={setConfirmPassword} type="password" required />
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Îți vom trimite un link de resetare la adresa{" "}
+                                <span className="font-medium text-gray-700 dark:text-gray-300">{profile.email}</span>.
+                                Linkul este valabil 1 oră.
+                            </p>
 
-                            {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
-                            {passwordSuccess && (
-                                <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1.5">
-                                    <CheckCircle size={14} /> Parola a fost schimbată.
-                                </p>
+                            {resetSent ? (
+                                <div className="flex items-start gap-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3">
+                                    <CheckCircle size={16} className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                                    <p className="text-sm text-green-700 dark:text-green-300">
+                                        Emailul a fost trimis. Verifică căsuța de intrare și urmează instrucțiunile.
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    {resetError && (
+                                        <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                                            {resetError}
+                                        </p>
+                                    )}
+                                    <button
+                                        onClick={handleSendResetEmail}
+                                        disabled={resetSending}
+                                        className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60"
+                                    >
+                                        {resetSending ? (
+                                            <Loader2 size={15} className="animate-spin" />
+                                        ) : (
+                                            <Mail size={15} />
+                                        )}
+                                        {resetSending ? "Se trimite..." : "Trimite link de resetare"}
+                                    </button>
+                                </>
                             )}
-
-                            <button
-                                type="submit"
-                                disabled={passwordSaving}
-                                className="w-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 py-2.5 rounded-xl font-semibold hover:bg-gray-700 dark:hover:bg-gray-300 transition-colors disabled:opacity-60"
-                            >
-                                {passwordSaving ? "Se salvează..." : "Schimbă parola"}
-                            </button>
-                        </form>
+                        </div>
                     )}
 
                     {profile?.isGoogleUser && (

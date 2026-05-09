@@ -33,6 +33,15 @@ export async function getOrders(token: string): Promise<Order[]> {
     return res.json();
 }
 
+export async function getOrderById(token: string, orderId: string): Promise<Order> {
+    const res = await fetch(`${BASE}/api/order/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+    });
+    if (!res.ok) throw new Error(`getOrderById failed: ${res.status}`);
+    return res.json();
+}
+
 export async function cancelOrder(token: string, orderId: string): Promise<void> {
     const res = await fetch(`${BASE}/api/order/${orderId}/cancel`, {
         method: "PUT",

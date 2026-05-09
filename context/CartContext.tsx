@@ -67,7 +67,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 getCart(token, null).then(setItems).catch(console.error);
             }
         } else {
-            // Guest: load session cart from backend
+            setItems([]);
             const sessionId = getOrCreateSessionId();
             getCart(null, sessionId).then(setItems).catch(console.error);
         }

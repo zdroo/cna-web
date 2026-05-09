@@ -125,10 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const register = useCallback(async (email: string, password: string) => {
-        const res = await apiRegister(email, password);
-        applyAuth(res.token, res.refreshToken);
-        router.push("/");
-    }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+        await apiRegister(email, password);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const logout = useCallback(() => {
         clearAuth();

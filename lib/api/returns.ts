@@ -32,6 +32,17 @@ export interface ReturnRequest {
     items: ReturnItem[];
 }
 
+export interface AdminReturnRequest extends ReturnRequest {
+    userId: string;
+}
+
+export interface AdminReturnPagedResult {
+    items: AdminReturnRequest[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+}
+
 export interface CreateReturnPayload {
     orderId: string;
     reason: string;
@@ -57,4 +68,33 @@ export async function createReturnRequest(token: string, payload: CreateReturnPa
         throw new Error(json?.message || "Nu s-a putut trimite cererea de retur.");
     }
     return res.json();
+}
+
+export async function getAdminReturnRequests(
+    token: string,
+    page = 1,
+    pageSize = 20,
+    status?: ReturnStatus
+): Promise<AdminReturnPagedResult> {
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    if (status !== undefined) params.set("status", String(status));
+    const res = await fetch(`${BASE}/api/returns/admin?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Nu s-au putut încărca cererile de retur.");
+    return res.json();
+}
+
+export async function updateReturnStatus(
+    token: string,
+    returnRequestId: string,
+    status: ReturnStatus,
+    adminNotes?: string
+): Promise<void> {
+    const res = await fetch(`${BASE}/api/returns/${returnRequestId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status, adminNotes: adminNotes ?? null }),
+    });
+    if (!res.ok) throw new Error("Actualizarea statusului a eșuat.");
 }
