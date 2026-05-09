@@ -10,6 +10,7 @@ import {
     MapPin,
     RotateCcw,
     Settings,
+    Heart,
     LayoutDashboard,
     LogOut,
     ChevronRight,
@@ -54,6 +55,13 @@ export default function ProfilePage() {
             description: "Salvează și editează adresele tale",
             action: "/profil/addresses",
             accent: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950",
+        },
+        {
+            icon: <Heart size={22} />,
+            label: "Favorite",
+            description: "Produsele tale salvate",
+            action: "/favourites",
+            accent: "text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950",
         },
         {
             icon: <RotateCcw size={22} />,

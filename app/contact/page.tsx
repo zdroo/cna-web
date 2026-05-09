@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Contact",
+    description: "Contactează-ne pentru orice întrebare sau problemă. Suntem aici să te ajutăm.",
+    alternates: { canonical: "/contact" },
+};
+
 export default function ContactPage() {
     return (
         <div className="max-w-2xl mx-auto py-16 px-4">

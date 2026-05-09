@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Despre noi",
+    description: "Află mai multe despre CNA Shop, misiunea noastră și valorile care ne ghidează.",
+    alternates: { canonical: "/despre-noi" },
+};
+
 export default function DespreNoiPage() {
     return (
         <div className="max-w-2xl mx-auto py-16 px-4">

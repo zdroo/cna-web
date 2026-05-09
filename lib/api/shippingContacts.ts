@@ -54,6 +54,19 @@ export async function deleteShippingContact(token: string, id: string): Promise<
     if (!res.ok) throw new Error("Nu s-a putut șterge adresa");
 }
 
+export async function updateShippingContact(
+    token: string,
+    id: string,
+    data: AddShippingContactRequest
+): Promise<void> {
+    const res = await fetch(`${BASE}/api/shipping-contacts/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Nu s-a putut actualiza adresa");
+}
+
 export async function setDefaultShippingContact(token: string, id: string): Promise<void> {
     const res = await fetch(`${BASE}/api/shipping-contacts/${id}/set-default`, {
         method: "PUT",

@@ -8,9 +8,34 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import GoogleProvider from "@/components/layout/GoogleProvider";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://cnashop.ro";
+const SITE_NAME = "CNA Shop";
+
 export const metadata: Metadata = {
-  title: "CNA Shop",
-  description: "CNA Magazin Online",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: "CNA Shop – magazin online cu produse de calitate. Livrare rapidă, prețuri competitive.",
+  keywords: ["magazin online", "produse", "cumpărături online", "CNA Shop"],
+  openGraph: {
+    type: "website",
+    locale: "ro_RO",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: "CNA Shop – magazin online cu produse de calitate.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: "CNA Shop – magazin online cu produse de calitate.",
+    images: ["/og-image.png"],
+  },
+  alternates: { canonical: SITE_URL },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getProductVariants } from "@/lib/api/products";
 import VariantCard from "@/components/products/VariantCard";
 import { SlidersHorizontal } from "lucide-react";
@@ -8,6 +9,16 @@ interface ProductVariantsPageProps {
 
 function slugToTitle(slug: string): string {
     return slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+export async function generateMetadata({ params }: ProductVariantsPageProps): Promise<Metadata> {
+    const { productSlug } = await params;
+    const title = slugToTitle(productSlug);
+    return {
+        title,
+        description: `Explorează variantele disponibile pentru ${title}. Alege varianta potrivită pentru tine.`,
+        alternates: { canonical: `/produse/${productSlug}` },
+    };
 }
 
 export default async function ProductVariantsPage({ params }: ProductVariantsPageProps) {

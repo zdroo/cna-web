@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Star, ChevronRight, Package } from "lucide-react";
 import { getVariantDetail } from "@/lib/api/products";
 import ImageGallery from "@/components/products/ImageGallery";
 import AddToCartButton from "@/components/products/AddToCartButton";
 import ReviewForm from "@/components/products/ReviewForm";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://cnashop.ro";
 
 interface VariantDetailPageProps {
     params: Promise<{ productSlug: string; variantSlug: string }>;
@@ -13,6 +16,30 @@ function slugToTitle(slug: string): string {
     return slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 
+export async function generateMetadata({ params }: VariantDetailPageProps): Promise<Metadata> {
+    const { productSlug, variantSlug } = await params;
+    try {
+        const variant = await getVariantDetail(productSlug, variantSlug);
+        const image = variant.imageUrls?.[0];
+        return {
+            title: variant.name,
+            description: variant.description
+                ? variant.description.slice(0, 155)
+                : `Cumpără ${variant.name} de la CNA Shop. Preț: ${variant.price.toFixed(2)} lei.`,
+            openGraph: {
+                title: variant.name,
+                description: variant.description?.slice(0, 155) ?? `${variant.name} – ${variant.price.toFixed(2)} lei`,
+                images: image ? [{ url: image, alt: variant.name }] : [],
+                url: `${SITE_URL}/produse/${productSlug}/${variantSlug}`,
+                type: "website",
+            },
+            alternates: { canonical: `/produse/${productSlug}/${variantSlug}` },
+        };
+    } catch {
+        return { title: slugToTitle(variantSlug) };
+    }
+}
+
 export default async function VariantDetailPage({ params }: VariantDetailPageProps) {
     const { productSlug, variantSlug } = await params;
     const variant = await getVariantDetail(productSlug, variantSlug);
@@ -20,8 +47,48 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
     const isOutOfStock = variant.stockQuantity === 0;
     const attributeEntries = Object.entries(variant.attributes ?? {});
 
+    const productJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: variant.name,
+        description: variant.description ?? undefined,
+        image: variant.imageUrls ?? [],
+        brand: variant.brand ? { "@type": "Brand", name: variant.brand } : undefined,
+        offers: {
+            "@type": "Offer",
+            price: variant.price,
+            priceCurrency: "RON",
+            availability: isOutOfStock
+                ? "https://schema.org/OutOfStock"
+                : "https://schema.org/InStock",
+            url: `${SITE_URL}/produse/${productSlug}/${variantSlug}`,
+        },
+        ...(variant.reviews.length > 0 && {
+            aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: (variant.averageRating ?? 0).toFixed(1),
+                reviewCount: variant.reviews.length,
+                bestRating: 5,
+                worstRating: 1,
+            },
+        }),
+    };
+
+    const breadcrumbJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Acasă", item: SITE_URL },
+            { "@type": "ListItem", position: 2, name: "Produse", item: `${SITE_URL}/produse` },
+            { "@type": "ListItem", position: 3, name: slugToTitle(productSlug), item: `${SITE_URL}/produse/${productSlug}` },
+            { "@type": "ListItem", position: 4, name: variant.name, item: `${SITE_URL}/produse/${productSlug}/${variantSlug}` },
+        ],
+    };
+
     return (
         <div className="flex flex-col gap-12">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-gray-500">

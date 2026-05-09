@@ -3,6 +3,7 @@ const BASE = process.env.NEXT_PUBLIC_API_URL;
 export type OrderStatus = 0 | 1 | 2 | 3 | 4;
 
 export interface OrderItem {
+    orderItemId: string;
     productVariantId: string;
     quantity: number;
     price: number;

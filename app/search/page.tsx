@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { getCategoriesWithProducts } from "@/lib/api/categories";
 import { getVariantsFiltered } from "@/lib/api/products";
 import SearchBar from "@/components/home/SearchBar";
 import CategorySidebar from "@/components/home/CategorySidebar";
 import VariantCard from "@/components/products/VariantCard";
+
+export const metadata: Metadata = {
+    title: "Căutare produse",
+    description: "Caută produse în catalogul CNA Shop după nume, categorie sau brand.",
+    robots: { index: false, follow: true },
+};
 
 interface SearchPageProps {
     searchParams: Promise<{ q?: string }>;
@@ -12,10 +19,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const { q } = await searchParams;
     const query = q?.trim() ?? "";
 
-    const [categories, variants] = await Promise.all([
+    const [categories, variantsResult] = await Promise.all([
         getCategoriesWithProducts(),
-        getVariantsFiltered({ searchText: query || undefined, onlyActive: true }),
+        getVariantsFiltered({ searchText: query || undefined, onlyActive: true, pageSize: 48 }),
     ]);
+
+    const variants = variantsResult.items;
 
     return (
         <div className="flex flex-col gap-6">

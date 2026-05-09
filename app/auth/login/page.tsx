@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { useAuth } from "@/context/AuthContext";
+import { resendConfirmationEmail } from "@/lib/api/auth";
 
 export default function LoginPage() {
     const { login, register, loginWithGoogle } = useAuth();
@@ -13,10 +14,14 @@ export default function LoginPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+    const [resendDone, setResendDone] = useState(false);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError(null);
+        setEmailNotConfirmed(false);
+        setResendDone(false);
         if (mode === "register" && password !== confirmPassword) {
             setError("Parolele nu coincid");
             return;
@@ -29,10 +34,21 @@ export default function LoginPage() {
                 await register(email, password);
             }
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "A apărut o eroare");
+            const msg = err instanceof Error ? err.message : "A apărut o eroare";
+            if (msg === "EMAIL_NOT_CONFIRMED") {
+                setEmailNotConfirmed(true);
+            } else {
+                setError(msg);
+            }
         } finally {
             setLoading(false);
         }
+    }
+
+    async function handleResend() {
+        setResendDone(false);
+        await resendConfirmationEmail(email);
+        setResendDone(true);
     }
 
     async function handleGoogleSuccess(credentialResponse: CredentialResponse) {
@@ -78,7 +94,14 @@ export default function LoginPage() {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Parolă</label>
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Parolă</label>
+                            {mode === "login" && (
+                                <Link href="/auth/forgot-password" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                                    Ai uitat parola?
+                                </Link>
+                            )}
+                        </div>
                         <input
                             type="password"
                             required
@@ -104,7 +127,20 @@ export default function LoginPage() {
                     )}
 
                     {error && (
-                        <p className="text-sm text-red-500 bg-red-50 rounded-lg px-4 py-2.5">{error}</p>
+                        <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950/40 rounded-lg px-4 py-2.5">{error}</p>
+                    )}
+
+                    {emailNotConfirmed && (
+                        <div className="bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-800 rounded-lg px-4 py-3 text-sm text-yellow-800 dark:text-yellow-300 flex flex-col gap-1.5">
+                            <p>Adresa de email nu a fost confirmată. Verifică inbox-ul.</p>
+                            {resendDone ? (
+                                <p className="font-medium text-green-700 dark:text-green-400">Email retrimis!</p>
+                            ) : (
+                                <button type="button" onClick={handleResend} className="text-left font-semibold underline hover:no-underline">
+                                    Retrimite emailul de confirmare
+                                </button>
+                            )}
+                        </div>
                     )}
 
                     <button

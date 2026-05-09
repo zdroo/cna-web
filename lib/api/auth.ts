@@ -58,3 +58,45 @@ export async function register(email: string, password: string): Promise<AuthRes
 
     return response.json();
 }
+
+export async function confirmEmail(token: string): Promise<void> {
+    const response = await fetch(`${BASE}/api/auth/confirm-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.message ?? "Token invalid sau expirat.");
+    }
+}
+
+export async function resendConfirmationEmail(email: string): Promise<void> {
+    await fetch(`${BASE}/api/auth/resend-confirmation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+    });
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+    await fetch(`${BASE}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+    });
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+    const response = await fetch(`${BASE}/api/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.message ?? "Token invalid sau expirat.");
+    }
+}

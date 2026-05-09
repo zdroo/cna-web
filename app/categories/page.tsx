@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { getCategories } from "@/lib/api/categories";
 import Link from "next/link";
 import Image from "next/image";
+
+export const metadata: Metadata = {
+    title: "Categorii",
+    description: "Explorează toate categoriile de produse disponibile în CNA Shop.",
+    alternates: { canonical: "/categories" },
+};
 
 export default async function CategoriesPage() {
     const categories = await getCategories();

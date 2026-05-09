@@ -7,7 +7,7 @@ import { getVariantsFiltered } from "@/lib/api/products";
 import VariantCard from "@/components/products/VariantCard";
 import { CategoryWithProducts } from "@/types/category";
 import { ProductSummary, ProductVariant } from "@/types/product";
-import { SlidersHorizontal, ArrowUpDown, ChevronDown, X } from "lucide-react";
+import { SlidersHorizontal, ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import PageSpinner from "@/components/ui/PageSpinner";
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -22,6 +22,16 @@ const SORT_LABELS: Record<SortOption, string> = {
     "name-desc":     "Nume: Z–A",
     "rating":        "Cel mai bun rating",
     "reviews-count": "Cele mai multe recenzii",
+};
+
+const SORT_TO_API: Record<SortOption, string | undefined> = {
+    relevant:        undefined,
+    "price-asc":     "PriceAsc",
+    "price-desc":    "PriceDesc",
+    "name-asc":      "NameAsc",
+    "name-desc":     "NameDesc",
+    "rating":        "Rating",
+    "reviews-count": "ReviewsCount",
 };
 
 interface AttrMeta {
@@ -51,19 +61,6 @@ function extractAttrs(variants: ProductVariant[]): AttrMeta[] {
         const nums = isNumeric ? values.map(Number) : [0];
         return { name, values, isNumeric, absMin: Math.min(...nums), absMax: Math.max(...nums) };
     });
-}
-
-function sortVariants(variants: ProductVariant[], sort: SortOption): ProductVariant[] {
-    const s = [...variants];
-    switch (sort) {
-        case "price-asc":     return s.sort((a, b) => a.price - b.price);
-        case "price-desc":    return s.sort((a, b) => b.price - a.price);
-        case "name-asc":      return s.sort((a, b) => a.productName.localeCompare(b.productName));
-        case "name-desc":     return s.sort((a, b) => b.productName.localeCompare(a.productName));
-        case "rating":        return s.sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0));
-        case "reviews-count": return s.sort((a, b) => b.reviewsCount - a.reviewsCount);
-        default:              return s;
-    }
 }
 
 // ─── small reusables ──────────────────────────────────────────────────────────
@@ -148,6 +145,61 @@ function NumericRangeFilter({
     );
 }
 
+// ─── pagination ────────────────────────────────────────────────────────────────
+
+function Pagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
+    if (totalPages <= 1) return null;
+
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else if (page <= 4) {
+        pages.push(1, 2, 3, 4, 5, "...", totalPages);
+    } else if (page >= totalPages - 3) {
+        pages.push(1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+    } else {
+        pages.push(1, "...", page - 1, page, page + 1, "...", totalPages);
+    }
+
+    return (
+        <div className="flex items-center justify-center gap-1 mt-8">
+            <button
+                onClick={() => onChange(page - 1)}
+                disabled={page === 1}
+                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                aria-label="Pagina anterioară"
+            >
+                <ChevronLeft size={16} />
+            </button>
+            {pages.map((p, i) =>
+                p === "..." ? (
+                    <span key={`e-${i}`} className="px-2 py-1 text-sm text-gray-400 dark:text-gray-500">…</span>
+                ) : (
+                    <button
+                        key={p}
+                        onClick={() => onChange(p as number)}
+                        className={`min-w-[36px] h-9 px-2 rounded-lg border text-sm font-medium transition-colors ${
+                            p === page
+                                ? "bg-gray-900 dark:bg-gray-100 border-gray-900 dark:border-gray-100 text-white dark:text-gray-900"
+                                : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-400"
+                        }`}
+                    >
+                        {p}
+                    </button>
+                )
+            )}
+            <button
+                onClick={() => onChange(page + 1)}
+                disabled={page === totalPages}
+                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                aria-label="Pagina următoare"
+            >
+                <ChevronRight size={16} />
+            </button>
+        </div>
+    );
+}
+
 // ─── filter overlay ───────────────────────────────────────────────────────────
 
 interface OverlayProps {
@@ -159,11 +211,14 @@ interface OverlayProps {
     selectedCategoryId: string;
     selectedProductSlug: string;
     onlyInStock: boolean;
+    minPrice?: number;
+    maxPrice?: number;
     textAttrFilters: Record<string, string[]>;
     numAttrFilters: Record<string, [number, number]>;
     onCategorySelect: (id: string) => void;
     onProductSelect: (id: string) => void;
     onInStockChange: (v: boolean) => void;
+    onPriceChange: (min?: number, max?: number) => void;
     onTextAttrToggle: (name: string, value: string) => void;
     onNumRangeChange: (name: string, range: [number, number]) => void;
     onClearAll: () => void;
@@ -179,11 +234,14 @@ function FilterOverlay({
     selectedCategoryId,
     selectedProductSlug,
     onlyInStock,
+    minPrice,
+    maxPrice,
     textAttrFilters,
     numAttrFilters,
     onCategorySelect,
     onProductSelect,
     onInStockChange,
+    onPriceChange,
     onTextAttrToggle,
     onNumRangeChange,
     onClearAll,
@@ -193,6 +251,20 @@ function FilterOverlay({
         document.body.style.overflow = "hidden";
         return () => { document.body.style.overflow = ""; };
     }, []);
+
+    const [minInput, setMinInput] = useState<string>(minPrice !== undefined ? String(minPrice) : "");
+    const [maxInput, setMaxInput] = useState<string>(maxPrice !== undefined ? String(maxPrice) : "");
+
+    // Sync local price state if parent clears the filter (e.g. "Resetează tot")
+    useEffect(() => { setMinInput(minPrice !== undefined ? String(minPrice) : ""); }, [minPrice]);
+    useEffect(() => { setMaxInput(maxPrice !== undefined ? String(maxPrice) : ""); }, [maxPrice]);
+
+    function flushPrice() {
+        onPriceChange(
+            minInput !== "" ? Number(minInput) : undefined,
+            maxInput !== "" ? Number(maxInput) : undefined,
+        );
+    }
 
     const showAttributes = !!selectedProductSlug && attrMeta.length > 0;
 
@@ -238,10 +310,10 @@ function FilterOverlay({
             <div className="flex-1 overflow-y-auto px-8 py-8">
                 <div className="max-w-5xl mx-auto space-y-10">
 
-                    {/* ── Primary filters: Categorie + Tip produs ── */}
+                    {/* ── Primary filters ── */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
 
-                        {/* Left column: Disponibilitate + Categorie */}
+                        {/* Left column */}
                         <div className="space-y-7">
 
                             <FilterSection title="Disponibilitate">
@@ -254,6 +326,36 @@ function FilterOverlay({
                                     />
                                     <span className="text-sm text-gray-700 dark:text-gray-300">Doar în stoc</span>
                                 </label>
+                            </FilterSection>
+
+                            <FilterSection title="Preț (RON)">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-400">Min</span>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            value={minInput}
+                                            placeholder="0"
+                                            onChange={e => setMinInput(e.target.value)}
+                                            onBlur={flushPrice}
+                                            className="w-24 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-gray-500"
+                                        />
+                                    </div>
+                                    <span className="text-gray-300 dark:text-gray-600">–</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-400">Max</span>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            value={maxInput}
+                                            placeholder="∞"
+                                            onChange={e => setMaxInput(e.target.value)}
+                                            onBlur={flushPrice}
+                                            className="w-24 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-gray-500"
+                                        />
+                                    </div>
+                                </div>
                             </FilterSection>
 
                             <FilterSection title="Categorie">
@@ -305,11 +407,10 @@ function FilterOverlay({
                         </div>
                     </div>
 
-                    {/* ── Attributes: delimited section ── */}
+                    {/* ── Attributes section (only when a product type is selected) ── */}
                     {showAttributes && (
                         <div className="space-y-8">
 
-                            {/* Separator */}
                             <div className="flex items-center gap-4">
                                 <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
                                 <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 px-1">
@@ -318,7 +419,6 @@ function FilterOverlay({
                                 <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
                             </div>
 
-                            {/* Attribute grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {attrMeta.map(attr => (
                                     <FilterSection key={attr.name} title={attr.name}>
@@ -379,7 +479,9 @@ function ProduseContent() {
     const router = useRouter();
 
     const [categories, setCategories] = useState<CategoryWithProducts[]>([]);
-    const [variants, setVariants]     = useState<ProductVariant[]>([]);
+    const [items, setItems]           = useState<ProductVariant[]>([]);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
     const [loading, setLoading]       = useState(true);
     const [filterOpen, setFilterOpen] = useState(false);
     const [sortOpen, setSortOpen]     = useState(false);
@@ -391,6 +493,9 @@ function ProduseContent() {
     const onlyInStock         = searchParams.get("instock") === "1";
     const sortBy              = (searchParams.get("sort") as SortOption) ?? "relevant";
     const search              = searchParams.get("search") ?? "";
+    const page                = Number(searchParams.get("p") ?? "1");
+    const minPrice            = searchParams.get("min") ? Number(searchParams.get("min")) : undefined;
+    const maxPrice            = searchParams.get("max") ? Number(searchParams.get("max")) : undefined;
 
     const textAttrFilters = useMemo(() => {
         const r: Record<string, string[]> = {};
@@ -432,9 +537,6 @@ function ProduseContent() {
     );
 
     useEffect(() => {
-        // Wait until slugs in the URL have been resolved to IDs via the loaded categories.
-        // Without this guard the first render fires a fetch with empty IDs (all variants)
-        // which can land after the correct filtered fetch and overwrite the results.
         if (categorySlug && !selectedCategoryId) return;
         if (selectedProductSlug && !selectedProductId) return;
 
@@ -446,11 +548,23 @@ function ProduseContent() {
             onlyInStock: onlyInStock || undefined,
             searchText:  search || undefined,
             onlyActive:  true,
+            sortBy:      SORT_TO_API[sortBy],
+            minPrice,
+            maxPrice,
+            // When a product is selected load all its variants (small set) for client-side attr filtering
+            page:     selectedProductSlug ? 1 : page,
+            pageSize: selectedProductSlug ? 200 : 24,
         })
-            .then(data => { if (!cancelled) setVariants(data); })
+            .then(data => {
+                if (!cancelled) {
+                    setItems(data.items);
+                    setTotalPages(data.totalPages);
+                    setTotalCount(data.totalCount);
+                }
+            })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
-    }, [categorySlug, selectedCategoryId, selectedProductSlug, selectedProductId, onlyInStock, search]);
+    }, [categorySlug, selectedCategoryId, selectedProductSlug, selectedProductId, onlyInStock, search, sortBy, minPrice, maxPrice, page]);
 
     useEffect(() => {
         const h = (e: MouseEvent) => {
@@ -462,10 +576,12 @@ function ProduseContent() {
     }, []);
 
     // ── Derived ────────────────────────────────────────────────────────
-    const attrMeta = useMemo(() => extractAttrs(variants), [variants]);
+    const attrMeta = useMemo(() => extractAttrs(items), [items]);
 
+    // Server handles sort & pagination; client-side attr filter only applies when a product is selected
     const displayed = useMemo(() => {
-        const filtered = variants.filter(v => {
+        if (!selectedProductSlug) return items;
+        return items.filter(v => {
             for (const [key, selected] of Object.entries(textAttrFilters)) {
                 if (!selected.length) continue;
                 if (!selected.includes(v.attributes?.[key])) return false;
@@ -476,16 +592,17 @@ function ProduseContent() {
             }
             return true;
         });
-        return sortVariants(filtered, sortBy);
-    }, [variants, textAttrFilters, numAttrFilters, sortBy]);
+    }, [items, selectedProductSlug, textAttrFilters, numAttrFilters]);
 
     // ── URL update helper ──────────────────────────────────────────────
+    // Any patch that doesn't explicitly set 'p' resets page to 1
     function patch(updates: Record<string, string | null>) {
         const p = new URLSearchParams(searchParams.toString());
         for (const [key, val] of Object.entries(updates)) {
             if (val === null) p.delete(key);
             else p.set(key, val);
         }
+        if (!("p" in updates)) p.delete("p");
         const qs = p.toString();
         router.replace(`/produse${qs ? `?${qs}` : ""}`);
     }
@@ -498,6 +615,8 @@ function ProduseContent() {
         if (onlyInStock) p.set("instock", "1");
         if (sortBy !== "relevant") p.set("sort", sortBy);
         if (search) p.set("search", search);
+        if (minPrice !== undefined) p.set("min", String(minPrice));
+        if (maxPrice !== undefined) p.set("max", String(maxPrice));
         const qs = p.toString();
         router.replace(`/produse${qs ? `?${qs}` : ""}`);
     }
@@ -509,8 +628,17 @@ function ProduseContent() {
         if (onlyInStock) p.set("instock", "1");
         if (sortBy !== "relevant") p.set("sort", sortBy);
         if (search) p.set("search", search);
+        if (minPrice !== undefined) p.set("min", String(minPrice));
+        if (maxPrice !== undefined) p.set("max", String(maxPrice));
         const qs = p.toString();
         router.replace(`/produse${qs ? `?${qs}` : ""}`);
+    }
+
+    function handlePriceChange(min?: number, max?: number) {
+        patch({
+            min: min !== undefined ? String(min) : null,
+            max: max !== undefined ? String(max) : null,
+        });
     }
 
     function toggleTextAttr(name: string, value: string) {
@@ -527,6 +655,11 @@ function ProduseContent() {
         router.replace("/produse");
     }
 
+    function handlePageChange(newPage: number) {
+        patch({ p: newPage > 1 ? String(newPage) : null });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
     // ── Active chips ───────────────────────────────────────────────────
     const selectedCategoryName = categories.find(c => c.categoryId === selectedCategoryId)?.name;
     const selectedProductName  = productsInCategory.find(p => p.productSlug === selectedProductSlug)?.name;
@@ -536,6 +669,8 @@ function ProduseContent() {
         ...(selectedCategoryName ? [{ label: `Categorie: ${selectedCategoryName}`, onRemove: () => handleCategorySelect("") }] : []),
         ...(selectedProductName  ? [{ label: `Produs: ${selectedProductName}`,  onRemove: () => handleProductSelect("")  }] : []),
         ...(onlyInStock ? [{ label: "În stoc", onRemove: () => patch({ instock: null }) }] : []),
+        ...(minPrice !== undefined ? [{ label: `Preț min: ${minPrice} RON`, onRemove: () => patch({ min: null }) }] : []),
+        ...(maxPrice !== undefined ? [{ label: `Preț max: ${maxPrice} RON`, onRemove: () => patch({ max: null }) }] : []),
         ...Object.entries(textAttrFilters).flatMap(([key, vals]) =>
             vals.map(v => ({ label: `${key}: ${v}`, onRemove: () => toggleTextAttr(key, v) }))
         ),
@@ -548,6 +683,7 @@ function ProduseContent() {
             })),
     ];
 
+    const displayedCount = selectedProductSlug ? displayed.length : totalCount;
     const title = search
         ? `Rezultate pentru "${search}"`
         : selectedProductName ?? selectedCategoryName ?? "Toate produsele";
@@ -562,7 +698,7 @@ function ProduseContent() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                         {loading
                             ? "Se încarcă..."
-                            : `${displayed.length} ${displayed.length === 1 ? "produs găsit" : "produse găsite"}`}
+                            : `${displayedCount} ${displayedCount === 1 ? "produs găsit" : "produse găsite"}`}
                     </p>
                 </div>
 
@@ -640,11 +776,16 @@ function ProduseContent() {
             {loading ? (
                 <PageSpinner />
             ) : displayed.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {displayed.map(v => (
-                        <VariantCard key={v.variantId} variant={v} productSlug={v.productSlug} />
-                    ))}
-                </div>
+                <>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {displayed.map(v => (
+                            <VariantCard key={v.variantId} variant={v} productSlug={v.productSlug} />
+                        ))}
+                    </div>
+                    {!selectedProductSlug && (
+                        <Pagination page={page} totalPages={totalPages} onChange={handlePageChange} />
+                    )}
+                </>
             ) : (
                 <div className="flex flex-col items-center justify-center py-24 text-gray-400">
                     <p className="text-lg font-medium">Niciun produs găsit</p>
@@ -658,16 +799,19 @@ function ProduseContent() {
                     categories={categories}
                     productsInCategory={productsInCategory}
                     attrMeta={attrMeta}
-                    variants={variants}
-                    resultCount={displayed.length}
+                    variants={items}
+                    resultCount={selectedProductSlug ? displayed.length : totalCount}
                     selectedCategoryId={selectedCategoryId}
                     selectedProductSlug={selectedProductSlug}
                     onlyInStock={onlyInStock}
+                    minPrice={minPrice}
+                    maxPrice={maxPrice}
                     textAttrFilters={textAttrFilters}
                     numAttrFilters={numAttrFilters}
                     onCategorySelect={handleCategorySelect}
                     onProductSelect={handleProductSelect}
                     onInStockChange={(v) => patch({ instock: v ? "1" : null })}
+                    onPriceChange={handlePriceChange}
                     onTextAttrToggle={toggleTextAttr}
                     onNumRangeChange={setNumRange}
                     onClearAll={handleClearAll}

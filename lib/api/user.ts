@@ -24,6 +24,35 @@ export async function updateProfile(token: string, firstName: string, lastName: 
     if (!res.ok) throw new Error("Nu s-a putut actualiza profilul");
 }
 
+export interface UserListItem {
+    userId: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    role: string;
+    isEmailConfirmed: boolean;
+    isActive: boolean;
+    createdAt: string;
+}
+
+export interface UsersPagedResult {
+    items: UserListItem[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
+export async function getUsers(token: string, page = 1, pageSize = 20, search?: string): Promise<UsersPagedResult> {
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    if (search) params.set("search", search);
+    const res = await fetch(`${BASE}/api/users?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Nu s-au putut încărca utilizatorii");
+    return res.json();
+}
+
 export async function changePassword(token: string, currentPassword: string, newPassword: string): Promise<void> {
     const res = await fetch(`${BASE}/api/users/me/password`, {
         method: "PUT",

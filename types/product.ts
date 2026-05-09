@@ -71,4 +71,17 @@ export interface VariantsFilter {
     onlyActive?: boolean;
     onlyInStock?: boolean;
     featured?: boolean;
+    sortBy?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    page?: number;
+    pageSize?: number;
+}
+
+export interface PagedResult<T> {
+    items: T[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingCart, BarChart2, FolderOpen, Package, Layers, ChevronRight } from "lucide-react";
+import { ShoppingCart, BarChart2, FolderOpen, Package, Layers, Users, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 const MANAGEMENT = [
@@ -9,6 +9,7 @@ const MANAGEMENT = [
     { href: "/admin/variante", label: "Variante", description: "Gestionează variantele produselor", icon: Layers, color: "bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400" },
     { href: "/admin/comenzi", label: "Comenzi", description: "Vizualizează și procesează comenzile", icon: ShoppingCart, color: "bg-orange-50 dark:bg-orange-950 text-orange-600 dark:text-orange-400" },
     { href: "/admin/statistici", label: "Statistici", description: "Venituri, comenzi și performanță", icon: BarChart2, color: "bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400" },
+    { href: "/admin/users", label: "Utilizatori", description: "Vizualizează utilizatorii înregistrați", icon: Users, color: "bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400" },
 ];
 
 export default function AdminDashboard() {

@@ -1,4 +1,4 @@
-import { ProductSummary, ProductVariant, ProductVariantDetail, VariantsFilter } from "@/types/product";
+import { PagedResult, ProductSummary, ProductVariant, ProductVariantDetail, VariantsFilter } from "@/types/product";
 
 export async function getProducts(category?: string): Promise<ProductSummary[]> {
     const params = new URLSearchParams();
@@ -27,7 +27,7 @@ export async function getProductVariants(productSlug: string): Promise<ProductVa
     return response.json();
 }
 
-export async function getVariantsFiltered(filter: VariantsFilter = {}): Promise<ProductVariant[]> {
+export async function getVariantsFiltered(filter: VariantsFilter = {}): Promise<PagedResult<ProductVariant>> {
     const params = new URLSearchParams();
 
     if (filter.searchText) params.append("searchText", filter.searchText);
@@ -37,7 +37,11 @@ export async function getVariantsFiltered(filter: VariantsFilter = {}): Promise<
     if (filter.onlyActive) params.append("onlyActive", "true");
     if (filter.onlyInStock) params.append("onlyInStock", "true");
     if (filter.featured) params.append("featured", "true");
-    params.append("pageSize", "200");
+    if (filter.sortBy) params.append("sortBy", filter.sortBy);
+    if (filter.minPrice !== undefined) params.append("minPrice", String(filter.minPrice));
+    if (filter.maxPrice !== undefined) params.append("maxPrice", String(filter.maxPrice));
+    params.append("page", String(filter.page ?? 1));
+    params.append("pageSize", String(filter.pageSize ?? 24));
 
     const url = `${process.env.NEXT_PUBLIC_API_URL}/api/products/variants-filtered?${params.toString()}`;
 

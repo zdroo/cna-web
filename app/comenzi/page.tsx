@@ -5,7 +5,8 @@ import PageSpinner from "@/components/ui/PageSpinner";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getOrders, cancelOrder, Order, OrderStatus } from "@/lib/api/orders";
-import { PackageSearch, X, RotateCcw, Clock, BadgeCheck, Truck, PackageCheck, Check } from "lucide-react";
+import { createReturnRequest } from "@/lib/api/returns";
+import { PackageSearch, X, RotateCcw, Clock, BadgeCheck, Truck, PackageCheck, Check, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -75,6 +76,189 @@ function StatusStepper({ status }: { status: OrderStatus }) {
     );
 }
 
+// ── Return request modal ──────────────────────────────────────────────────────
+
+interface ReturnItemState {
+    orderItemId: string;
+    productName: string;
+    maxQuantity: number;
+    selected: boolean;
+    quantity: number;
+}
+
+interface ReturnModalProps {
+    order: Order;
+    token: string;
+    onClose: () => void;
+    onSuccess: () => void;
+}
+
+function ReturnModal({ order, token, onClose, onSuccess }: ReturnModalProps) {
+    const [items, setItems] = useState<ReturnItemState[]>(
+        order.items.map((i) => ({
+            orderItemId: i.orderItemId,
+            productName: i.productName,
+            maxQuantity: i.quantity,
+            selected: false,
+            quantity: 1,
+        }))
+    );
+    const [reason, setReason] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const selectedItems = items.filter((i) => i.selected);
+    const canSubmit = selectedItems.length > 0 && reason.trim().length >= 10;
+
+    function toggleItem(idx: number) {
+        setItems((prev) =>
+            prev.map((item, i) => (i === idx ? { ...item, selected: !item.selected } : item))
+        );
+    }
+
+    function setQty(idx: number, value: number) {
+        setItems((prev) =>
+            prev.map((item, i) =>
+                i === idx
+                    ? { ...item, quantity: Math.max(1, Math.min(value, item.maxQuantity)) }
+                    : item
+            )
+        );
+    }
+
+    async function handleSubmit() {
+        setSubmitting(true);
+        setError(null);
+        try {
+            await createReturnRequest(token, {
+                orderId: order.orderId,
+                reason: reason.trim(),
+                items: selectedItems.map((i) => ({ orderItemId: i.orderItemId, quantity: i.quantity })),
+            });
+            onSuccess();
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : "Eroare necunoscută.");
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+            <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                    <div>
+                        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Solicită retur</h2>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                            Comanda #{order.orderId.split("-")[0].toUpperCase()}
+                        </p>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+
+                    {/* Item selection */}
+                    <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Selectează produsele de returnat
+                        </p>
+                        <div className="flex flex-col gap-2">
+                            {items.map((item, idx) => (
+                                <div
+                                    key={item.orderItemId}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-colors cursor-pointer select-none ${
+                                        item.selected
+                                            ? "border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-800"
+                                            : "border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    }`}
+                                    onClick={() => toggleItem(idx)}
+                                >
+                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                                        item.selected
+                                            ? "bg-gray-900 dark:bg-gray-100 border-gray-900 dark:border-gray-100"
+                                            : "border-gray-300 dark:border-gray-600"
+                                    }`}>
+                                        {item.selected && <Check size={11} className="text-white dark:text-gray-900" />}
+                                    </div>
+                                    <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{item.productName}</span>
+                                    {item.selected && item.maxQuantity > 1 && (
+                                        <div
+                                            className="flex items-center gap-1"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <button
+                                                className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                                onClick={() => setQty(idx, item.quantity - 1)}
+                                            >−</button>
+                                            <span className="w-5 text-center text-sm font-medium text-gray-900 dark:text-gray-100">{item.quantity}</span>
+                                            <button
+                                                className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                                onClick={() => setQty(idx, item.quantity + 1)}
+                                            >+</button>
+                                        </div>
+                                    )}
+                                    {(!item.selected || item.maxQuantity === 1) && (
+                                        <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">× {item.maxQuantity}</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Reason */}
+                    <div>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">
+                            Motivul returului <span className="text-red-400">*</span>
+                        </label>
+                        <textarea
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder="Descrie motivul returului (minim 10 caractere)..."
+                            rows={3}
+                            className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 resize-none transition-colors"
+                        />
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{reason.length} / minim 10 caractere</p>
+                    </div>
+
+                    {error && (
+                        <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2">
+                            {error}
+                        </p>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 flex gap-2">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                        Anulează
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={!canSubmit || submitting}
+                        className="flex-1 py-2.5 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold hover:bg-gray-700 dark:hover:bg-gray-300 disabled:opacity-40 transition-colors flex items-center justify-center gap-2"
+                    >
+                        {submitting && <Loader2 size={15} className="animate-spin" />}
+                        {submitting ? "Se trimite..." : "Trimite cererea"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function ComenziPage() {
     const router = useRouter();
     const { user, token, isLoaded } = useAuth();
@@ -83,6 +267,8 @@ export default function ComenziPage() {
     const [loading, setLoading] = useState(true);
     const [cancelling, setCancelling] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [returnOrder, setReturnOrder] = useState<Order | null>(null);
+    const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
 
     const fetchOrders = useCallback(async () => {
         try {
@@ -116,15 +302,30 @@ export default function ComenziPage() {
         }
     }
 
+    function handleReturnSuccess() {
+        setReturnOrder(null);
+        setReturnSuccess("Cererea de retur a fost trimisă cu succes!");
+        setTimeout(() => setReturnSuccess(null), 5000);
+    }
+
     if (!isLoaded || !user) return null;
+
+    const isWithin30Days = (order: Order) => {
+        const placed = new Date(order.createdAt).getTime();
+        return Date.now() - placed <= 30 * 24 * 60 * 60 * 1000;
+    };
 
     return (
         <div className="flex flex-col gap-8">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Comenzile mele</h1>
 
-            {error && (
-                <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
-                    {error}
+            {(error || returnSuccess) && (
+                <p className={`text-sm px-4 py-3 rounded-lg border ${
+                    returnSuccess
+                        ? "text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+                        : "text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
+                }`}>
+                    {returnSuccess ?? error}
                 </p>
             )}
 
@@ -179,7 +380,7 @@ export default function ComenziPage() {
                                 </div>
                             </div>
 
-                            {/* Status stepper — only for active orders */}
+                            {/* Status stepper */}
                             {order.status !== 4 && (
                                 <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-4">
                                     <StatusStepper status={order.status} />
@@ -237,11 +438,10 @@ export default function ComenziPage() {
                                             {cancelling === order.orderId ? "Se anulează..." : "Anulează"}
                                         </button>
                                     )}
-                                    {order.status === 3 && (
+                                    {order.status === 3 && isWithin30Days(order) && (
                                         <button
-                                            disabled
-                                            className="flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg opacity-60 cursor-not-allowed"
-                                            title="Disponibil în curând"
+                                            onClick={() => setReturnOrder(order)}
+                                            className="flex items-center gap-1.5 text-sm text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 px-3 py-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950 transition-colors"
                                         >
                                             <RotateCcw size={14} />
                                             Solicită retur
@@ -252,6 +452,15 @@ export default function ComenziPage() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {returnOrder && (
+                <ReturnModal
+                    order={returnOrder}
+                    token={token!}
+                    onClose={() => setReturnOrder(null)}
+                    onSuccess={handleReturnSuccess}
+                />
             )}
         </div>
     );
