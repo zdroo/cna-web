@@ -58,7 +58,7 @@ export async function getCart(token?: string | null, sessionId?: string | null):
     const res = await fetch(buildUrl("/api/cart", sessionId), {
         headers: buildHeaders(token, sessionId),
     });
-    if (!res.ok) return [];
+    if (!res.ok) throw new Error("Eroare la încărcarea coșului");
     const data: CartApiResponse = await res.json();
     return mapItems(data);
 }
@@ -117,14 +117,19 @@ export async function clearCartApi(token?: string | null, sessionId?: string | n
 export async function checkout(
     token: string,
     shippingContactId: string,
-    cartItemIds: string[]
+    cartItemIds: string[],
+    isB2B = false,
+    paymentMethod: "Stripe" | "NetPayment" = "Stripe"
 ): Promise<{ orderId: string }> {
     const res = await fetch(`${BASE}/api/cart/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ shippingContactId, cartItemIds }),
+        body: JSON.stringify({ shippingContactId, cartItemIds, isB2B, paymentMethod }),
     });
-    if (!res.ok) throw new Error("Comanda nu a putut fi plasată");
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Comanda nu a putut fi plasată");
+    }
     return res.json();
 }
 

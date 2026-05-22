@@ -11,9 +11,10 @@ import {
     ShippingContact,
     AddShippingContactRequest,
 } from "@/lib/api/shippingContacts";
+import { getCompanyProfile, CompanyProfile } from "@/lib/api/companyProfile";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag, ArrowLeft, MapPin, Plus } from "lucide-react";
+import { ShoppingBag, ArrowLeft, MapPin, Plus, Building2, CreditCard, FileText } from "lucide-react";
 
 const emptyForm: AddShippingContactRequest = {
     fullName: "",
@@ -39,6 +40,10 @@ export default function CheckoutPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+    const [isB2B, setIsB2B] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<"Stripe" | "NetPayment">("Stripe");
+
     useEffect(() => {
         if (!isLoaded) return;
         if (!user) { router.replace("/auth/login"); return; }
@@ -54,6 +59,8 @@ export default function CheckoutPage() {
                 console.error("getShippingContacts:", err);
                 setShowNewForm(true);
             });
+
+        getCompanyProfile(token!).then(setCompanyProfile).catch(() => {});
     }, [isLoaded, user, items.length, token, router]);
 
     if (!isLoaded || !user || items.length === 0) return null;
@@ -92,10 +99,14 @@ export default function CheckoutPage() {
             }
 
             const cartItemIds = items.map((i) => i.cartItemId);
-            const { orderId } = await checkout(token!, contactId, cartItemIds);
+            const { orderId } = await checkout(token!, contactId, cartItemIds, isB2B, paymentMethod);
             submittedRef.current = true;
             clearCart();
-            router.push(`/payment/${orderId}`);
+            if (isB2B && paymentMethod === "NetPayment") {
+                router.push(`/comenzi`);
+            } else {
+                router.push(`/payment/${orderId}`);
+            }
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Eroare la plasarea comenzii");
         } finally {
@@ -169,6 +180,76 @@ export default function CheckoutPage() {
                                     Adresă nouă
                                 </button>
                             </div>
+                        </div>
+                    )}
+
+                    {/* B2B section */}
+                    {companyProfile && (
+                        <div className="bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800 rounded-xl shadow-sm p-6 flex flex-col gap-4">
+                            <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-lg flex items-center gap-2">
+                                <Building2 size={18} className="text-gray-500 dark:text-gray-400" />
+                                Comandă B2B
+                            </h2>
+
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <div
+                                    onClick={() => { setIsB2B((v) => !v); if (!isB2B) setPaymentMethod("Stripe"); }}
+                                    className={`relative w-10 h-5.5 rounded-full transition-colors ${isB2B ? "bg-gray-900 dark:bg-gray-100" : "bg-gray-200 dark:bg-gray-700"}`}
+                                    style={{ width: 40, height: 22 }}
+                                >
+                                    <span className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full bg-white dark:bg-gray-900 shadow transition-transform ${isB2B ? "translate-x-4.5" : ""}`}
+                                        style={{ width: 18, height: 18, transform: isB2B ? "translateX(18px)" : "translateX(0)" }} />
+                                </div>
+                                <span className="text-sm text-gray-700 dark:text-gray-300">
+                                    Emite factură fiscală pe <strong>{companyProfile.companyName}</strong>
+                                </span>
+                            </label>
+
+                            {isB2B && (
+                                <div className="flex flex-col gap-3 pt-1">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                                        CUI: {companyProfile.cui}
+                                        {companyProfile.jNumber && ` · ${companyProfile.jNumber}`}
+                                        {companyProfile.isVATRegistered && " · Plătitor TVA"}
+                                    </p>
+
+                                    <div className="flex flex-col gap-2">
+                                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Metodă de plată</p>
+                                        {(["Stripe", "NetPayment"] as const).map((method) => (
+                                            <label
+                                                key={method}
+                                                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                                    paymentMethod === method
+                                                        ? "border-gray-900 dark:border-gray-400 bg-gray-50 dark:bg-gray-800"
+                                                        : "border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500"
+                                                }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="paymentMethod"
+                                                    value={method}
+                                                    checked={paymentMethod === method}
+                                                    onChange={() => setPaymentMethod(method)}
+                                                />
+                                                {method === "Stripe" ? (
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <CreditCard size={15} className="text-gray-400 dark:text-gray-500" />
+                                                        <span className="text-gray-800 dark:text-gray-200">Card / Online (Stripe)</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <FileText size={15} className="text-gray-400 dark:text-gray-500" />
+                                                        <div>
+                                                            <span className="text-gray-800 dark:text-gray-200">Plată la termen (net-30)</span>
+                                                            <p className="text-xs text-gray-400 dark:text-gray-500">Comanda este confirmată imediat, factura se plătește în 30 de zile</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

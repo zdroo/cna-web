@@ -71,19 +71,29 @@ export async function confirmEmail(token: string): Promise<void> {
 }
 
 export async function resendConfirmationEmail(email: string): Promise<void> {
-    await fetch(`${BASE}/api/auth/resend-confirmation`, {
+    const response = await fetch(`${BASE}/api/auth/resend-confirmation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
     });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.message ?? "Trimiterea emailului a eșuat.");
+    }
 }
 
 export async function forgotPassword(email: string): Promise<void> {
-    await fetch(`${BASE}/api/auth/forgot-password`, {
+    const response = await fetch(`${BASE}/api/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
     });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.message ?? "Trimiterea emailului a eșuat.");
+    }
 }
 
 export async function resetPassword(token: string, newPassword: string): Promise<void> {

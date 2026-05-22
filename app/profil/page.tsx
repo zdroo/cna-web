@@ -16,6 +16,7 @@ import {
     ChevronRight,
     UserCircle,
     Moon,
+    Building2,
 } from "lucide-react";
 
 interface ProfileCard {
@@ -76,6 +77,13 @@ export default function ProfilePage() {
             description: "Schimbă parola și datele personale",
             action: "/profil/settings",
             accent: "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800",
+        },
+        {
+            icon: <Building2 size={22} />,
+            label: "Profil companie",
+            description: "Date firmă pentru facturi fiscale și prețuri B2B",
+            action: "/profil/company",
+            accent: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950",
         },
     ];
 

@@ -13,6 +13,20 @@ export interface OrderItem {
     productSlug: string;
 }
 
+export interface CompanyOrderSnapshot {
+    companyName: string;
+    cui: string;
+    jNumber?: string;
+    isVATRegistered: boolean;
+    vatNumber?: string;
+    billingAddressLine1: string;
+    billingAddressLine2?: string;
+    billingCity: string;
+    billingRegion: string;
+    billingPostalCode: string;
+    billingCountryCode: string;
+}
+
 export interface Order {
     orderId: string;
     totalAmount: number;
@@ -23,6 +37,14 @@ export interface Order {
     awbNumber?: string;
     carrierName?: string;
     trackingUrl?: string;
+    isB2B: boolean;
+    netAmount: number;
+    vatAmount: number;
+    vatRate: number;
+    invoiceNumber?: string;
+    invoiceDate?: string;
+    paymentMethod?: string;
+    companySnapshot?: CompanyOrderSnapshot;
 }
 
 export async function getOrders(token: string): Promise<Order[]> {

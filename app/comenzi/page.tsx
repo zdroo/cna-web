@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getOrders, cancelOrder, Order, OrderStatus } from "@/lib/api/orders";
 import { createReturnRequest } from "@/lib/api/returns";
-import { PackageSearch, X, RotateCcw, Clock, BadgeCheck, Truck, PackageCheck, Check, Loader2 } from "lucide-react";
+import { PackageSearch, X, RotateCcw, Clock, BadgeCheck, Truck, PackageCheck, Check, Loader2, Building2, FileText } from "lucide-react";
 import Link from "next/link";
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -404,6 +404,42 @@ export default function ComenziPage() {
                                         <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">{order.awbNumber}</span>
                                     )}
                                     {order.carrierName && <span className="text-xs text-gray-400 dark:text-gray-500">({order.carrierName})</span>}
+                                </div>
+                            )}
+
+                            {/* B2B invoice info */}
+                            {order.isB2B && (
+                                <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3 flex flex-col gap-1.5">
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                                        <Building2 size={13} />
+                                        Factură fiscală
+                                    </div>
+                                    {order.invoiceNumber && (
+                                        <div className="flex items-center gap-1.5 text-sm">
+                                            <FileText size={14} className="text-gray-400 dark:text-gray-500" />
+                                            <span className="font-mono font-semibold text-gray-800 dark:text-gray-200">{order.invoiceNumber}</span>
+                                            {order.invoiceDate && (
+                                                <span className="text-xs text-gray-400 dark:text-gray-500">
+                                                    · {new Date(order.invoiceDate).toLocaleDateString("ro-RO")}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                    {order.companySnapshot && (
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {order.companySnapshot.companyName} · CUI: {order.companySnapshot.cui}
+                                            {order.companySnapshot.isVATRegistered && " · Plătitor TVA"}
+                                        </p>
+                                    )}
+                                    <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                        <span>Valoare fără TVA: <strong className="text-gray-700 dark:text-gray-300">{order.netAmount.toFixed(2)} lei</strong></span>
+                                        <span>TVA ({(order.vatRate * 100).toFixed(0)}%): <strong className="text-gray-700 dark:text-gray-300">{order.vatAmount.toFixed(2)} lei</strong></span>
+                                    </div>
+                                    {order.paymentMethod === "NetPayment" && (
+                                        <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 w-fit">
+                                            Plată la termen (net-30)
+                                        </span>
+                                    )}
                                 </div>
                             )}
 
