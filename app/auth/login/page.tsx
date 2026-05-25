@@ -26,11 +26,19 @@ export default function LoginPage() {
 
     if (!isLoaded || user) return null;
 
+    function isValidEmail(value: string) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError(null);
         setEmailNotConfirmed(false);
         setResendDone(false);
+        if (!isValidEmail(email)) {
+            setError("Adresa de email nu este validă.");
+            return;
+        }
         if (mode === "register" && password !== confirmPassword) {
             setError("Parolele nu coincid");
             return;
@@ -217,7 +225,6 @@ export default function LoginPage() {
                                 shape="rectangular"
                                 size="large"
                                 width="368"
-                                locale="ro"
                             />
                         </div>
 

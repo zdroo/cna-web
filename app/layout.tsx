@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import UnpaidOrderBanner from "@/components/layout/UnpaidOrderBanner";
+import Footer from "@/components/layout/Footer";
+import CookieConsent from "@/components/layout/CookieConsent";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
@@ -10,6 +12,15 @@ import GoogleProvider from "@/components/layout/GoogleProvider";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://cnashop.ro";
 const SITE_NAME = "CNA Shop";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#030712" },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -26,13 +37,11 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: SITE_NAME,
     description: "CNA Shop – magazin online cu produse de calitate.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_NAME,
     description: "CNA Shop – magazin online cu produse de calitate.",
-    images: ["/og-image.png"],
   },
   alternates: { canonical: SITE_URL },
   robots: { index: true, follow: true },
@@ -64,6 +73,8 @@ export default function RootLayout({
                   <main className="max-w-7xl mx-auto px-4 py-8">
                     {children}
                   </main>
+                  <Footer />
+                  <CookieConsent />
                 </FavoritesProvider>
               </CartProvider>
             </ThemeProvider>

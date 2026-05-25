@@ -67,8 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     function scheduleRefresh(currentToken: string) {
         if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
 
-        const delay = msUntilExpiry(currentToken) - 60_000;
-        if (delay <= 0) return; // already expired, handled elsewhere
+        const remaining = msUntilExpiry(currentToken);
+        if (remaining <= 0) return; // already expired, handled elsewhere
 
         refreshTimerRef.current = setTimeout(async () => {
             const stored = localStorage.getItem("refreshToken");
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } catch {
                 clearAuth();
             }
-        }, delay);
+        }, Math.max(0, remaining - 60_000));
     }
 
     useEffect(() => {
@@ -115,13 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = useCallback(async (email: string, password: string) => {
         const res = await apiLogin(email, password);
         applyAuth(res.token, res.refreshToken);
-        router.push("/");
+        const redirect = new URLSearchParams(window.location.search).get("redirect");
+        router.push(redirect ?? "/");
     }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const loginWithGoogle = useCallback(async (idToken: string) => {
         const res = await apiGoogleLogin(idToken);
         applyAuth(res.token, res.refreshToken);
-        router.push("/");
+        const redirect = new URLSearchParams(window.location.search).get("redirect");
+        router.push(redirect ?? "/");
     }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const register = useCallback(async (email: string, password: string) => {

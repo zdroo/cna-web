@@ -34,6 +34,7 @@ export interface ReturnRequest {
 
 export interface AdminReturnRequest extends ReturnRequest {
     userId: string;
+    userEmail: string;
 }
 
 export interface AdminReturnPagedResult {

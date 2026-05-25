@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
     ShippingContact,
@@ -28,6 +29,7 @@ type FormData = typeof EMPTY_FORM;
 
 export default function AddressesPage() {
     const { user, token, isLoaded } = useAuth();
+    const router = useRouter();
     const [contacts, setContacts] = useState<ShippingContact[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -124,6 +126,7 @@ export default function AddressesPage() {
     }
 
     if (!isLoaded) return null;
+    if (!user) { router.replace("/auth/login"); return null; }
 
     return (
         <div className="max-w-lg mx-auto flex flex-col gap-6">

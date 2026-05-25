@@ -60,6 +60,13 @@ export default function FavouritesPage() {
                                             <span className="text-white text-xs font-semibold">Stoc epuizat</span>
                                         </div>
                                     )}
+                                    {item.stockQuantity > 0 && item.discountedPrice != null && (
+                                        <div className="absolute top-2 left-2">
+                                            <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                                -{Math.round((1 - item.discountedPrice / item.price) * 100)}%
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </Link>
 
@@ -73,7 +80,14 @@ export default function FavouritesPage() {
                                     </h3>
                                 </Link>
                                 <div className="flex items-center justify-between mt-auto pt-2">
-                                    <span className="font-bold text-gray-900 dark:text-gray-100">{item.price.toFixed(2)} lei</span>
+                                    {item.discountedPrice != null ? (
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="font-bold text-orange-600 dark:text-orange-400">{item.discountedPrice.toFixed(2)} lei</span>
+                                            <span className="text-xs text-gray-400 line-through">{item.price.toFixed(2)} lei</span>
+                                        </div>
+                                    ) : (
+                                        <span className="font-bold text-gray-900 dark:text-gray-100">{item.price.toFixed(2)} lei</span>
+                                    )}
                                     <button
                                         onClick={() => removeItem(item.favoriteItemId, item.productVariantId)}
                                         className="flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-950 hover:border-red-200 dark:hover:border-red-800 transition-colors group"

@@ -30,7 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
     }, [isLoaded, user, router]);
 
-    if (!isLoaded || !user) return null;
+    if (!isLoaded || !user || (user.role !== "Admin" && user.role !== "Seller")) return null;
 
     return (
         <div className="flex gap-8 items-start">

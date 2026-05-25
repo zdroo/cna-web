@@ -303,12 +303,20 @@ export async function adminUploadImage(token: string, file: File): Promise<{ url
 export interface VariantAttribute { name: string; value: string; unitId?: string; }
 
 export async function adminGetVariants(token: string, productId?: string) {
-    const url = productId
-        ? `${BASE}/api/variants?productId=${productId}`
-        : `${BASE}/api/variants`;
-    const res = await fetch(url, { headers: authHeaders(token), cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch variants");
-    return res.json();
+    const all: unknown[] = [];
+    let page = 1;
+    while (true) {
+        const params = new URLSearchParams({ pageSize: "100", page: String(page) });
+        if (productId) params.set("productId", productId);
+        const res = await fetch(`${BASE}/api/variants?${params}`, { headers: authHeaders(token), cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to fetch variants");
+        const data = await res.json();
+        const items: unknown[] = data.items ?? [];
+        all.push(...items);
+        if (all.length >= data.totalCount || items.length < 100) break;
+        page++;
+    }
+    return all;
 }
 
 export async function adminCreateVariant(token: string, data: {
@@ -325,6 +333,7 @@ export async function adminCreateVariant(token: string, data: {
 export async function adminUpdateVariant(token: string, variantId: string, data: {
     productId: string; sku: string; name: string; price: number; quantity: number;
     variantAttributes: VariantAttribute[]; imageUrls: string[]; isActive: boolean;
+    discountedPrice?: number | null;
 }) {
     const res = await fetch(`${BASE}/api/variants/${variantId}`, {
         method: "PUT", headers: authHeaders(token), body: JSON.stringify({ ...data, variantId }),

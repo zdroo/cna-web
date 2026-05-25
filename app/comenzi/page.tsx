@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import PageSpinner from "@/components/ui/PageSpinner";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { getOrders, cancelOrder, Order, OrderStatus } from "@/lib/api/orders";
+import { getOrders, cancelOrder, downloadInvoice, Order, OrderStatus } from "@/lib/api/orders";
 import { createReturnRequest } from "@/lib/api/returns";
-import { PackageSearch, X, RotateCcw, Clock, BadgeCheck, Truck, PackageCheck, Check, Loader2, Building2, FileText } from "lucide-react";
+import { PackageSearch, X, RotateCcw, Clock, BadgeCheck, Truck, PackageCheck, Check, Loader2, Building2, FileText, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -265,15 +265,20 @@ export default function ComenziPage() {
 
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [cancelling, setCancelling] = useState<string | null>(null);
+    const [downloadingInvoice, setDownloadingInvoice] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [returnOrder, setReturnOrder] = useState<Order | null>(null);
     const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
 
-    const fetchOrders = useCallback(async () => {
+    const fetchOrders = useCallback(async (p: number) => {
+        setLoading(true);
         try {
-            const data = await getOrders(token!);
-            setOrders(data);
+            const data = await getOrders(token!, p);
+            setOrders(data.items);
+            setTotalPages(data.totalPages);
         } catch {
             setError("Nu s-au putut încărca comenzile.");
         } finally {
@@ -284,17 +289,15 @@ export default function ComenziPage() {
     useEffect(() => {
         if (!isLoaded) return;
         if (!user) { router.replace("/auth/login"); return; }
-        fetchOrders();
-    }, [isLoaded, user, router, fetchOrders]);
+        fetchOrders(page);
+    }, [isLoaded, user, router, fetchOrders, page]);
 
     async function handleCancel(orderId: string) {
         setCancelling(orderId);
         setError(null);
         try {
             await cancelOrder(token!, orderId);
-            setOrders((prev) =>
-                prev.map((o) => o.orderId === orderId ? { ...o, status: 4 } : o)
-            );
+            await fetchOrders(page);
         } catch {
             setError("Nu s-a putut anula comanda.");
         } finally {
@@ -302,10 +305,22 @@ export default function ComenziPage() {
         }
     }
 
+    async function handleDownloadInvoice(orderId: string) {
+        setDownloadingInvoice(orderId);
+        try {
+            await downloadInvoice(token!, orderId);
+        } catch {
+            setError("Nu s-a putut descărca factura.");
+        } finally {
+            setDownloadingInvoice(null);
+        }
+    }
+
     function handleReturnSuccess() {
         setReturnOrder(null);
         setReturnSuccess("Cererea de retur a fost trimisă cu succes!");
         setTimeout(() => setReturnSuccess(null), 5000);
+        fetchOrders(page);
     }
 
     if (!isLoaded || !user) return null;
@@ -331,7 +346,7 @@ export default function ComenziPage() {
 
             {loading ? (
                 <PageSpinner />
-            ) : orders.length === 0 ? (
+            ) : orders.length === 0 && page === 1 ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4 text-gray-400 dark:text-gray-500">
                     <PackageSearch size={48} className="text-gray-300 dark:text-gray-600" />
                     <p className="text-lg font-medium">Nu ai nicio comandă încă</p>
@@ -423,6 +438,16 @@ export default function ComenziPage() {
                                                     · {new Date(order.invoiceDate).toLocaleDateString("ro-RO")}
                                                 </span>
                                             )}
+                                            <button
+                                                onClick={() => handleDownloadInvoice(order.orderId)}
+                                                disabled={downloadingInvoice === order.orderId}
+                                                className="ml-1 flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
+                                            >
+                                                {downloadingInvoice === order.orderId
+                                                    ? <Loader2 size={11} className="animate-spin" />
+                                                    : <Download size={11} />}
+                                                Descarcă
+                                            </button>
                                         </div>
                                     )}
                                     {order.companySnapshot && (
@@ -445,8 +470,8 @@ export default function ComenziPage() {
 
                             {/* Items */}
                             <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3 flex flex-col gap-2">
-                                {order.items.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+                                {order.items.map((item) => (
+                                    <div key={item.orderItemId} className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
                                         <Link
                                             href={`/produse/${item.productSlug}/${item.variantSlug}`}
                                             className="hover:text-gray-900 dark:hover:text-gray-100 hover:underline transition-colors"
@@ -462,7 +487,7 @@ export default function ComenziPage() {
                             </div>
 
                             {/* Actions */}
-                            {(order.status < 2 || order.status === 3) && (
+                            {(order.status < 2 || (order.status === 3 && isWithin30Days(order))) && (
                                 <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3 flex items-center justify-end gap-3">
                                     {order.status < 2 && (
                                         <button
@@ -487,6 +512,28 @@ export default function ComenziPage() {
                             )}
                         </div>
                     ))}
+
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-3 pt-2">
+                            <button
+                                onClick={() => setPage((p) => p - 1)}
+                                disabled={page <= 1}
+                                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                                Pagina {page} din {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setPage((p) => p + 1)}
+                                disabled={page >= totalPages}
+                                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 

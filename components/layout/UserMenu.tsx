@@ -7,7 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 export default function UserMenu() {
     const { user, isLoaded } = useAuth();
 
-    if (!isLoaded) return null;
+    if (!isLoaded) return (
+        <div className="w-[110px] h-9 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
+    );
 
     if (!user) {
         return (

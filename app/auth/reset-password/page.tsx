@@ -41,7 +41,7 @@ function ResetPasswordForm() {
             <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 w-full max-w-md p-8 flex flex-col gap-6">
                 {done && (
                     <button
-                        onClick={() => router.push("/profil/settings")}
+                        onClick={() => router.push("/auth/login")}
                         className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                         aria-label="Închide"
                     >
@@ -62,10 +62,10 @@ function ResetPasswordForm() {
                             </p>
                         </div>
                         <button
-                            onClick={() => router.push("/profil/settings")}
+                            onClick={() => router.push("/auth/login")}
                             className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 py-2.5 rounded-xl font-semibold hover:opacity-90 transition-opacity"
                         >
-                            Înapoi la setări
+                            Autentifică-te
                         </button>
                     </div>
                 ) : (

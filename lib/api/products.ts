@@ -37,6 +37,7 @@ export async function getVariantsFiltered(filter: VariantsFilter = {}): Promise<
     if (filter.onlyActive) params.append("onlyActive", "true");
     if (filter.onlyInStock) params.append("onlyInStock", "true");
     if (filter.featured) params.append("featured", "true");
+    if (filter.onlyDiscounted) params.append("onlyDiscounted", "true");
     if (filter.sortBy) params.append("sortBy", filter.sortBy);
     if (filter.minPrice !== undefined) params.append("minPrice", String(filter.minPrice));
     if (filter.maxPrice !== undefined) params.append("maxPrice", String(filter.maxPrice));

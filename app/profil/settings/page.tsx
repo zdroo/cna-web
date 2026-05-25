@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { getUserProfile, updateProfile, UserProfile } from "@/lib/api/user";
+import { getUserProfile, updateProfile, deleteAccount, UserProfile } from "@/lib/api/user";
 import { forgotPassword } from "@/lib/api/auth";
-import { ArrowLeft, Loader2, User, Lock, CheckCircle, Mail } from "lucide-react";
+import { ArrowLeft, Loader2, User, Lock, CheckCircle, Mail, Trash2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
-    const { user, token, isLoaded } = useAuth();
+    const { user, token, isLoaded, logout } = useAuth();
+    const router = useRouter();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -21,6 +23,10 @@ export default function SettingsPage() {
     const [resetSending, setResetSending] = useState(false);
     const [resetSent, setResetSent] = useState(false);
     const [resetError, setResetError] = useState<string | null>(null);
+
+    const [deleteConfirm, setDeleteConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!isLoaded || !user || !token) return;
@@ -65,7 +71,22 @@ export default function SettingsPage() {
         }
     }
 
+    async function handleDeleteAccount() {
+        setDeleting(true);
+        setDeleteError(null);
+        try {
+            await deleteAccount(token!);
+            logout();
+            router.replace("/");
+        } catch (e: unknown) {
+            setDeleteError(e instanceof Error ? e.message : "Eroare necunoscută");
+            setDeleting(false);
+            setDeleteConfirm(false);
+        }
+    }
+
     if (!isLoaded) return null;
+    if (!user) { router.replace("/auth/login"); return null; }
 
     return (
         <div className="max-w-lg mx-auto flex flex-col gap-6">
@@ -170,6 +191,59 @@ export default function SettingsPage() {
                             Contul tău este autentificat prin Google. Parola se gestionează din contul tău Google.
                         </div>
                     )}
+
+                    {/* Delete account */}
+                    <div className="bg-white dark:bg-gray-900 border border-red-100 dark:border-red-900 rounded-2xl p-5 flex flex-col gap-4">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Trash2 size={18} className="text-red-500" />
+                            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Șterge contul</h2>
+                        </div>
+
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Această acțiune este permanentă și nu poate fi anulată. Contul poate fi șters
+                            doar dacă nu ai comenzi active sau cereri de retur în curs.
+                        </p>
+
+                        {deleteError && (
+                            <div className="flex items-start gap-2 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                                <AlertTriangle size={15} className="text-red-500 flex-shrink-0 mt-0.5" />
+                                <p className="text-sm text-red-600 dark:text-red-400">{deleteError}</p>
+                            </div>
+                        )}
+
+                        {!deleteConfirm ? (
+                            <button
+                                onClick={() => setDeleteConfirm(true)}
+                                className="w-full flex items-center justify-center gap-2 border border-red-200 dark:border-red-800 py-2.5 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                            >
+                                <Trash2 size={15} />
+                                Șterge contul
+                            </button>
+                        ) : (
+                            <div className="flex flex-col gap-3">
+                                <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                                    Ești sigur? Această acțiune nu poate fi anulată.
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setDeleteConfirm(false)}
+                                        disabled={deleting}
+                                        className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60"
+                                    >
+                                        Anulează
+                                    </button>
+                                    <button
+                                        onClick={handleDeleteAccount}
+                                        disabled={deleting}
+                                        className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        {deleting && <Loader2 size={14} className="animate-spin" />}
+                                        {deleting ? "Se șterge..." : "Da, șterge contul"}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </>
             )}
         </div>

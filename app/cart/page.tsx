@@ -14,7 +14,7 @@ export default function CartPage() {
 
     function handleCheckout() {
         if (!user) {
-            router.push("/auth/login");
+            router.push("/auth/login?redirect=/checkout");
         } else {
             router.push("/checkout");
         }

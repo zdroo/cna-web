@@ -25,10 +25,10 @@ export async function generateMetadata({ params }: VariantDetailPageProps): Prom
             title: variant.name,
             description: variant.description
                 ? variant.description.slice(0, 155)
-                : `Cumpără ${variant.name} de la CNA Shop. Preț: ${variant.price.toFixed(2)} lei.`,
+                : `Cumpără ${variant.name} de la CNA Shop. Preț: ${(variant.discountedPrice ?? variant.price).toFixed(2)} lei.`,
             openGraph: {
                 title: variant.name,
-                description: variant.description?.slice(0, 155) ?? `${variant.name} – ${variant.price.toFixed(2)} lei`,
+                description: variant.description?.slice(0, 155) ?? `${variant.name} – ${(variant.discountedPrice ?? variant.price).toFixed(2)} lei`,
                 images: image ? [{ url: image, alt: variant.name }] : [],
                 url: `${SITE_URL}/produse/${productSlug}/${variantSlug}`,
                 type: "website",
@@ -52,16 +52,18 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
         "@type": "Product",
         name: variant.name,
         description: variant.description ?? undefined,
+        sku: variant.sku,
         image: variant.imageUrls ?? [],
         brand: variant.brand ? { "@type": "Brand", name: variant.brand } : undefined,
         offers: {
             "@type": "Offer",
-            price: variant.price,
+            price: variant.discountedPrice ?? variant.price,
             priceCurrency: "RON",
             availability: isOutOfStock
                 ? "https://schema.org/OutOfStock"
                 : "https://schema.org/InStock",
             url: `${SITE_URL}/produse/${productSlug}/${variantSlug}`,
+            seller: { "@type": "Organization", name: "CNA Shop", url: SITE_URL },
         },
         ...(variant.reviews.length > 0 && {
             aggregateRating: {
@@ -71,6 +73,13 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
                 bestRating: 5,
                 worstRating: 1,
             },
+            review: variant.reviews.map((r) => ({
+                "@type": "Review",
+                reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+                author: { "@type": "Person", name: r.userName },
+                ...(r.comment && { reviewBody: r.comment }),
+                datePublished: r.createdAt.split("T")[0],
+            })),
         }),
     };
 
@@ -141,9 +150,25 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
                     </div>
 
                     {/* Price */}
-                    <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                        {variant.price.toFixed(2)} lei
-                    </div>
+                    {variant.discountedPrice != null ? (
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3">
+                                <span className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                                    {variant.discountedPrice.toFixed(2)} lei
+                                </span>
+                                <span className="bg-orange-500 text-white text-sm font-bold px-2.5 py-1 rounded-full">
+                                    -{Math.round((1 - variant.discountedPrice / variant.price) * 100)}%
+                                </span>
+                            </div>
+                            <span className="text-lg text-gray-400 line-through">
+                                {variant.price.toFixed(2)} lei
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                            {variant.price.toFixed(2)} lei
+                        </div>
+                    )}
 
                     {/* Attributes */}
                     {attributeEntries.length > 0 && (

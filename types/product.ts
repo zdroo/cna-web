@@ -25,6 +25,7 @@ export interface ProductVariant {
     brand: string | null;
     description: string | null;
     price: number;
+    discountedPrice: number | null;
     stockQuantity: number;
     averageRating: number | null;
     reviewsCount: number;
@@ -46,6 +47,7 @@ export interface ProductVariantDetail {
     brand: string | null;
     description: string | null;
     price: number;
+    discountedPrice: number | null;
     stockQuantity: number;
     averageRating: number | null;
     primaryImageUrl: string | null;
@@ -71,6 +73,7 @@ export interface VariantsFilter {
     onlyActive?: boolean;
     onlyInStock?: boolean;
     featured?: boolean;
+    onlyDiscounted?: boolean;
     sortBy?: string;
     minPrice?: number;
     maxPrice?: number;

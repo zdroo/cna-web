@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, RotateCcw, Clock, PackageCheck, HelpCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -34,12 +35,15 @@ const HOW_IT_WORKS = [
 
 export default function ReturnsPage() {
     const { token, isLoaded, user } = useAuth();
+    const router = useRouter();
     const [requests, setRequests] = useState<ReturnRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isLoaded || !user || !token) return;
+        if (!isLoaded) return;
+        if (!user) { router.replace("/auth/login"); return; }
+        if (!token) return;
         getUserReturnRequests(token)
             .then(setRequests)
             .catch(() => setError("Nu s-au putut încărca cererile de retur."))

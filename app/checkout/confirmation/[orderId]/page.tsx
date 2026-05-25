@@ -26,7 +26,8 @@ export default function ConfirmationPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!isLoaded || !token || !orderId) return;
+        if (!isLoaded) return;
+        if (!token || !orderId) { setLoading(false); return; }
         getOrderById(token, orderId)
             .then(setOrder)
             .catch(console.error)

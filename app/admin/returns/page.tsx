@@ -147,6 +147,7 @@ export default function AdminReturnsPage() {
                                         <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
                                             {r.items.map((i) => `${i.productName} ×${i.quantity}`).join(", ")}
                                         </p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{r.userEmail}</p>
                                     </div>
                                     <span className={`ml-auto shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${RETURN_STATUS_STYLE[r.status]}`}>
                                         {RETURN_STATUS_LABEL[r.status]}
@@ -184,8 +185,11 @@ export default function AdminReturnsPage() {
                                             </div>
                                         )}
 
-                                        {/* User ID */}
-                                        <p className="text-xs text-gray-400">User: {r.userId}</p>
+                                        {/* User + Order */}
+                                        <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
+                                            <span>Client: <span className="font-medium text-gray-600 dark:text-gray-300">{r.userEmail}</span></span>
+                                            <span>Comandă: <span className="font-mono font-medium text-gray-600 dark:text-gray-300">#{shortId(r.orderId)}</span></span>
+                                        </div>
 
                                         {/* Actions — only for actionable statuses */}
                                         {(r.status === 0 || r.status === 1) && (

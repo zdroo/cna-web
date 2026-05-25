@@ -24,6 +24,7 @@ interface Variant {
     sku: string;
     name: string;
     price: number;
+    discountedPrice: number | null;
     stockQuantity: number;
     isActive: boolean;
     productName: string;
@@ -42,6 +43,7 @@ interface FormState {
     sku: string;
     name: string;
     price: string;
+    discountedPrice: string;
     quantity: string;
     brand: string;
     description: string;
@@ -55,6 +57,7 @@ const emptyForm: FormState = {
     sku: "",
     name: "",
     price: "",
+    discountedPrice: "",
     quantity: "",
     brand: "",
     description: "",
@@ -62,6 +65,87 @@ const emptyForm: FormState = {
     imageUrls: [],
     isActive: true,
 };
+
+function DiscountSection({
+    price,
+    discountedPrice,
+    onChange,
+}: {
+    price: string;
+    discountedPrice: string;
+    onChange: (val: string) => void;
+}) {
+    const basePrice = parseFloat(price);
+    const discPrice = parseFloat(discountedPrice);
+
+    const computedPercent =
+        !isNaN(basePrice) && basePrice > 0 && !isNaN(discPrice) && discPrice > 0
+            ? Math.round((1 - discPrice / basePrice) * 100)
+            : null;
+
+    function handlePercentChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const pct = parseFloat(e.target.value);
+        if (!isNaN(pct) && !isNaN(basePrice) && basePrice > 0 && pct > 0 && pct < 100) {
+            onChange((basePrice * (1 - pct / 100)).toFixed(2));
+        } else if (e.target.value === "") {
+            onChange("");
+        }
+    }
+
+    const inputCls = "px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100";
+
+    return (
+        <div className="flex flex-col gap-2 p-4 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/40">
+            <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-orange-700 dark:text-orange-400 uppercase tracking-wider">
+                    Reducere
+                </p>
+                {discountedPrice && (
+                    <button
+                        type="button"
+                        onClick={() => onChange("")}
+                        className="text-xs text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-200 transition-colors"
+                    >
+                        Elimină reducerea
+                    </button>
+                )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-500 dark:text-gray-400">Preț redus (lei)</label>
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={discountedPrice}
+                        onChange={(e) => onChange(e.target.value)}
+                        placeholder={!isNaN(basePrice) ? `< ${basePrice.toFixed(2)}` : "0.00"}
+                        className={inputCls}
+                    />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-500 dark:text-gray-400">Reducere (%)</label>
+                    <input
+                        type="number"
+                        min="1"
+                        max="99"
+                        step="1"
+                        value={computedPercent ?? ""}
+                        onChange={handlePercentChange}
+                        placeholder="ex. 20"
+                        className={inputCls}
+                    />
+                </div>
+            </div>
+            {computedPercent !== null && !isNaN(discPrice) && (
+                <p className="text-xs text-orange-600 dark:text-orange-400">
+                    Prețul original {!isNaN(basePrice) ? basePrice.toFixed(2) : "–"} lei va apărea tăiat, iar prețul redus va fi{" "}
+                    <strong>{discPrice.toFixed(2)} lei</strong> (−{computedPercent}%).
+                </p>
+            )}
+        </div>
+    );
+}
 
 function ImageSection({
     imageUrls,
@@ -114,7 +198,7 @@ function ImageSection({
 
             <div className="flex flex-wrap gap-3">
                 {imageUrls.map((url, i) => (
-                    <div key={i} className="relative group flex-shrink-0">
+                    <div key={i} className="relative group shrink-0">
                         <div className={`w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 ${i === 0 ? "border-blue-400 dark:border-blue-500" : "border-transparent"}`}>
                             <img
                                 src={url}
@@ -143,7 +227,7 @@ function ImageSection({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-1 text-gray-400 dark:text-gray-500 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50 flex-shrink-0"
+                    className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-1 text-gray-400 dark:text-gray-500 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50 shrink-0"
                 >
                     {uploading ? (
                         <span className="text-[10px] text-center px-1">Se încarcă...</span>
@@ -299,7 +383,7 @@ function UnitCombobox({
                                 disabled={adding}
                                 className="w-full text-left px-3 py-2.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 disabled:opacity-50"
                             >
-                                <Plus size={13} className="flex-shrink-0" />
+                                <Plus size={13} className="shrink-0" />
                                 {adding ? "Se adaugă..." : `Adaugă „${inputValue.trim()}"`}
                             </button>
                         )}
@@ -336,7 +420,7 @@ function UnitCombobox({
                                                 : "hover:bg-gray-50 dark:hover:bg-gray-800"
                                         }`}
                                     >
-                                        <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded w-10 text-center flex-shrink-0">
+                                        <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded w-10 text-center shrink-0">
                                             {u.symbol}
                                         </span>
                                         <span className="text-gray-600 dark:text-gray-400 truncate">
@@ -372,9 +456,9 @@ export default function AdminVariantePage() {
         if (!token) return;
         Promise.all([adminGetVariants(token), adminGetProducts(token), adminGetMeasurementUnits(token)])
             .then(([v, p, u]) => {
-                setVariants(v);
-                setProducts(p);
-                setUnits(u);
+                setVariants(v as Variant[]);
+                setProducts(p as Product[]);
+                setUnits(u as MeasurementUnit[]);
             })
             .catch(console.error)
             .finally(() => setLoading(false));
@@ -395,6 +479,7 @@ export default function AdminVariantePage() {
             sku: variant.sku,
             name: variant.name ?? "",
             price: String(variant.price),
+            discountedPrice: variant.discountedPrice != null ? String(variant.discountedPrice) : "",
             quantity: String(variant.stockQuantity),
             brand: "",
             description: "",
@@ -461,6 +546,7 @@ export default function AdminVariantePage() {
         try {
             const price = parseFloat(form.price);
             const quantity = parseInt(form.quantity, 10);
+            const discountedPrice = form.discountedPrice ? parseFloat(form.discountedPrice) : null;
             if (editingId) {
                 await adminUpdateVariant(token, editingId, {
                     productId: form.productId,
@@ -471,9 +557,10 @@ export default function AdminVariantePage() {
                     variantAttributes: form.attributes,
                     imageUrls: form.imageUrls.filter(Boolean),
                     isActive: form.isActive,
+                    discountedPrice,
                 });
                 const updated = await adminGetVariants(token);
-                setVariants(updated);
+                setVariants(updated as Variant[]);
             } else {
                 await adminCreateVariant(token, {
                     productId: form.productId,
@@ -487,7 +574,7 @@ export default function AdminVariantePage() {
                     imageUrls: form.imageUrls.filter(Boolean),
                 });
                 const updated = await adminGetVariants(token);
-                setVariants(updated);
+                setVariants(updated as Variant[]);
             }
             closeForm();
         } catch (e) {
@@ -680,6 +767,14 @@ export default function AdminVariantePage() {
                             </div>
 
                             {editingId && (
+                                <DiscountSection
+                                    price={form.price}
+                                    discountedPrice={form.discountedPrice}
+                                    onChange={(val) => setField("discountedPrice", val)}
+                                />
+                            )}
+
+                            {editingId && (
                                 <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
                                     <input
                                         type="checkbox"
@@ -693,7 +788,7 @@ export default function AdminVariantePage() {
                         </div>
 
                         {/* Right — attributes */}
-                        <div className="w-80 xl:w-96 flex-shrink-0 p-6 flex flex-col gap-3">
+                        <div className="w-80 xl:w-96 shrink-0 p-6 flex flex-col gap-3">
                             <div className="flex items-center justify-between">
                                 <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                                     Atribute
@@ -837,7 +932,7 @@ export default function AdminVariantePage() {
                                         />
                                     </td>
                                     <td className="px-4 py-3">
-                                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0">
                                             {variant.imageUrls?.[0] ? (
                                                 <img
                                                     src={variant.imageUrls[0]}
@@ -860,7 +955,16 @@ export default function AdminVariantePage() {
                                         <span className="text-gray-400 dark:text-gray-500 text-xs block mt-0.5">{variant.variantSlug}</span>
                                     </td>
                                     <td className="px-6 py-4 font-mono text-xs text-gray-700 dark:text-gray-300">{variant.sku}</td>
-                                    <td className="px-6 py-4 text-gray-900 dark:text-gray-100 font-medium">{variant.price.toFixed(2)} lei</td>
+                                    <td className="px-6 py-4">
+                                        {variant.discountedPrice != null ? (
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="font-semibold text-orange-600 dark:text-orange-400">{variant.discountedPrice.toFixed(2)} lei</span>
+                                                <span className="text-xs text-gray-400 line-through">{variant.price.toFixed(2)} lei</span>
+                                            </div>
+                                        ) : (
+                                            <span className="font-medium text-gray-900 dark:text-gray-100">{variant.price.toFixed(2)} lei</span>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4 text-gray-600 dark:text-gray-400">{variant.stockQuantity}</td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${

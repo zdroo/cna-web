@@ -46,7 +46,7 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user) { router.replace("/auth/login"); return; }
+        if (!user) { router.replace("/auth/login?redirect=/checkout"); return; }
         if (items.length === 0 && !submittedRef.current) { router.replace("/cart"); return; }
 
         getShippingContacts(token!)
@@ -193,7 +193,7 @@ export default function CheckoutPage() {
 
                             <label className="flex items-center gap-3 cursor-pointer">
                                 <div
-                                    onClick={() => { setIsB2B((v) => !v); if (!isB2B) setPaymentMethod("Stripe"); }}
+                                    onClick={() => { const next = !isB2B; setIsB2B(next); if (!next) setPaymentMethod("Stripe"); }}
                                     className={`relative w-10 h-5.5 rounded-full transition-colors ${isB2B ? "bg-gray-900 dark:bg-gray-100" : "bg-gray-200 dark:bg-gray-700"}`}
                                     style={{ width: 40, height: 22 }}
                                 >

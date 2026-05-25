@@ -211,6 +211,7 @@ interface OverlayProps {
     selectedCategoryId: string;
     selectedProductSlug: string;
     onlyInStock: boolean;
+    onlyDiscounted: boolean;
     minPrice?: number;
     maxPrice?: number;
     textAttrFilters: Record<string, string[]>;
@@ -218,6 +219,7 @@ interface OverlayProps {
     onCategorySelect: (id: string) => void;
     onProductSelect: (id: string) => void;
     onInStockChange: (v: boolean) => void;
+    onDiscountedChange: (v: boolean) => void;
     onPriceChange: (min?: number, max?: number) => void;
     onTextAttrToggle: (name: string, value: string) => void;
     onNumRangeChange: (name: string, range: [number, number]) => void;
@@ -234,6 +236,7 @@ function FilterOverlay({
     selectedCategoryId,
     selectedProductSlug,
     onlyInStock,
+    onlyDiscounted,
     minPrice,
     maxPrice,
     textAttrFilters,
@@ -241,6 +244,7 @@ function FilterOverlay({
     onCategorySelect,
     onProductSelect,
     onInStockChange,
+    onDiscountedChange,
     onPriceChange,
     onTextAttrToggle,
     onNumRangeChange,
@@ -317,15 +321,26 @@ function FilterOverlay({
                         <div className="space-y-7">
 
                             <FilterSection title="Disponibilitate">
-                                <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
-                                    <input
-                                        type="checkbox"
-                                        checked={onlyInStock}
-                                        onChange={e => onInStockChange(e.target.checked)}
-                                        className="w-4 h-4 rounded accent-gray-900 dark:accent-gray-100 cursor-pointer"
-                                    />
-                                    <span className="text-sm text-gray-700 dark:text-gray-300">Doar în stoc</span>
-                                </label>
+                                <div className="flex flex-col gap-2">
+                                    <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={onlyInStock}
+                                            onChange={e => onInStockChange(e.target.checked)}
+                                            className="w-4 h-4 rounded accent-gray-900 dark:accent-gray-100 cursor-pointer"
+                                        />
+                                        <span className="text-sm text-gray-700 dark:text-gray-300">Doar în stoc</span>
+                                    </label>
+                                    <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={onlyDiscounted}
+                                            onChange={e => onDiscountedChange(e.target.checked)}
+                                            className="w-4 h-4 rounded accent-orange-500 cursor-pointer"
+                                        />
+                                        <span className="text-sm text-gray-700 dark:text-gray-300">La reducere</span>
+                                    </label>
+                                </div>
                             </FilterSection>
 
                             <FilterSection title="Preț (RON)">
@@ -491,6 +506,7 @@ function ProduseContent() {
     const categorySlug        = searchParams.get("category") ?? "";
     const selectedProductSlug = searchParams.get("prod") ?? "";
     const onlyInStock         = searchParams.get("instock") === "1";
+    const onlyDiscounted      = searchParams.get("discounted") === "1";
     const sortBy              = (searchParams.get("sort") as SortOption) ?? "relevant";
     const search              = searchParams.get("search") ?? "";
     const page                = Number(searchParams.get("p") ?? "1");
@@ -543,12 +559,13 @@ function ProduseContent() {
         let cancelled = false;
         setLoading(true);
         getVariantsFiltered({
-            categoryId:  selectedCategoryId || undefined,
-            productId:   selectedProductId  || undefined,
-            onlyInStock: onlyInStock || undefined,
-            searchText:  search || undefined,
-            onlyActive:  true,
-            sortBy:      SORT_TO_API[sortBy],
+            categoryId:     selectedCategoryId || undefined,
+            productId:      selectedProductId  || undefined,
+            onlyInStock:    onlyInStock || undefined,
+            onlyDiscounted: onlyDiscounted || undefined,
+            searchText:     search || undefined,
+            onlyActive:     true,
+            sortBy:         SORT_TO_API[sortBy],
             minPrice,
             maxPrice,
             // When a product is selected load all its variants (small set) for client-side attr filtering
@@ -564,7 +581,7 @@ function ProduseContent() {
             })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
-    }, [categorySlug, selectedCategoryId, selectedProductSlug, selectedProductId, onlyInStock, search, sortBy, minPrice, maxPrice, page]);
+    }, [categorySlug, selectedCategoryId, selectedProductSlug, selectedProductId, onlyInStock, onlyDiscounted, search, sortBy, minPrice, maxPrice, page]);
 
     useEffect(() => {
         const h = (e: MouseEvent) => {
@@ -613,6 +630,7 @@ function ProduseContent() {
         const p = new URLSearchParams();
         if (slug) p.set("category", slug);
         if (onlyInStock) p.set("instock", "1");
+        if (onlyDiscounted) p.set("discounted", "1");
         if (sortBy !== "relevant") p.set("sort", sortBy);
         if (search) p.set("search", search);
         if (minPrice !== undefined) p.set("min", String(minPrice));
@@ -626,6 +644,7 @@ function ProduseContent() {
         if (categorySlug) p.set("category", categorySlug);
         if (slug) p.set("prod", slug);
         if (onlyInStock) p.set("instock", "1");
+        if (onlyDiscounted) p.set("discounted", "1");
         if (sortBy !== "relevant") p.set("sort", sortBy);
         if (search) p.set("search", search);
         if (minPrice !== undefined) p.set("min", String(minPrice));
@@ -669,6 +688,7 @@ function ProduseContent() {
         ...(selectedCategoryName ? [{ label: `Categorie: ${selectedCategoryName}`, onRemove: () => handleCategorySelect("") }] : []),
         ...(selectedProductName  ? [{ label: `Produs: ${selectedProductName}`,  onRemove: () => handleProductSelect("")  }] : []),
         ...(onlyInStock ? [{ label: "În stoc", onRemove: () => patch({ instock: null }) }] : []),
+        ...(onlyDiscounted ? [{ label: "La reducere", onRemove: () => patch({ discounted: null }) }] : []),
         ...(minPrice !== undefined ? [{ label: `Preț min: ${minPrice} RON`, onRemove: () => patch({ min: null }) }] : []),
         ...(maxPrice !== undefined ? [{ label: `Preț max: ${maxPrice} RON`, onRemove: () => patch({ max: null }) }] : []),
         ...Object.entries(textAttrFilters).flatMap(([key, vals]) =>
@@ -804,6 +824,7 @@ function ProduseContent() {
                     selectedCategoryId={selectedCategoryId}
                     selectedProductSlug={selectedProductSlug}
                     onlyInStock={onlyInStock}
+                    onlyDiscounted={onlyDiscounted}
                     minPrice={minPrice}
                     maxPrice={maxPrice}
                     textAttrFilters={textAttrFilters}
@@ -811,6 +832,7 @@ function ProduseContent() {
                     onCategorySelect={handleCategorySelect}
                     onProductSelect={handleProductSelect}
                     onInStockChange={(v) => patch({ instock: v ? "1" : null })}
+                    onDiscountedChange={(v) => patch({ discounted: v ? "1" : null })}
                     onPriceChange={handlePriceChange}
                     onTextAttrToggle={toggleTextAttr}
                     onNumRangeChange={setNumRange}

@@ -31,11 +31,18 @@ export default function VariantCard({ variant, productSlug }: { variant: Product
                             className="object-cover hover:scale-105 transition-transform duration-300"
                         />
                     ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600" />
+                        <div className="absolute inset-0 bg-linear-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600" />
                     )}
                     {isOutOfStock && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                             <span className="text-white font-semibold text-sm">Stoc epuizat</span>
+                        </div>
+                    )}
+                    {!isOutOfStock && variant.discountedPrice != null && (
+                        <div className="absolute top-2 left-2">
+                            <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                -{Math.round((1 - variant.discountedPrice / variant.price) * 100)}%
+                            </span>
                         </div>
                     )}
                 </div>
@@ -55,7 +62,7 @@ export default function VariantCard({ variant, productSlug }: { variant: Product
                 </Link>
 
                 {/* Attribute pills */}
-                <div className="flex flex-wrap gap-1 min-h-[48px] content-start">
+                <div className="flex flex-wrap gap-1 min-h-12 content-start">
                     {attributeEntries.length > 0 && visibleAttrs.map(([name, value]) => (
                         <span
                             key={name}
@@ -84,7 +91,14 @@ export default function VariantCard({ variant, productSlug }: { variant: Product
 
                 {/* Price + actions */}
                 <div className="flex items-center justify-between mt-auto pt-2">
-                    <span className="font-bold text-gray-900 dark:text-gray-100">{variant.price.toFixed(2)} lei</span>
+                    {variant.discountedPrice != null ? (
+                        <div className="flex flex-col gap-0.5">
+                            <span className="font-bold text-orange-600 dark:text-orange-400">{variant.discountedPrice.toFixed(2)} lei</span>
+                            <span className="text-xs text-gray-400 line-through">{variant.price.toFixed(2)} lei</span>
+                        </div>
+                    ) : (
+                        <span className="font-bold text-gray-900 dark:text-gray-100">{variant.price.toFixed(2)} lei</span>
+                    )}
                     <div className="flex items-center gap-1.5">
                         <FavoriteButton variantId={variant.variantId} />
                         <div className="relative group/cart">

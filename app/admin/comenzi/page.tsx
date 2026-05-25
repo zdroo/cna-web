@@ -120,7 +120,7 @@ export default function AdminComenziPage() {
     }
 
     const counts = TABS.slice(1).reduce<Record<number, number>>((acc, tab) => {
-        acc[tab.value] = orders.filter((o) => o.status === tab.value).length;
+        acc[tab.value as number] = orders.filter((o) => o.status === tab.value).length;
         return acc;
     }, {});
 

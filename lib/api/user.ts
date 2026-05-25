@@ -53,6 +53,17 @@ export async function getUsers(token: string, page = 1, pageSize = 20, search?: 
     return res.json();
 }
 
+export async function deleteAccount(token: string): Promise<void> {
+    const res = await fetch(`${BASE}/api/users/me`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.message || "Nu s-a putut șterge contul");
+    }
+}
+
 export async function changePassword(token: string, currentPassword: string, newPassword: string): Promise<void> {
     const res = await fetch(`${BASE}/api/users/me/password`, {
         method: "PUT",

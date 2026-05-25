@@ -47,8 +47,16 @@ export interface Order {
     companySnapshot?: CompanyOrderSnapshot;
 }
 
-export async function getOrders(token: string): Promise<Order[]> {
-    const res = await fetch(`${BASE}/api/order`, {
+export interface PagedOrdersResult {
+    items: Order[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
+export async function getOrders(token: string, page = 1, pageSize = 10): Promise<PagedOrdersResult> {
+    const res = await fetch(`${BASE}/api/order?page=${page}&pageSize=${pageSize}`, {
         headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error(`getOrders failed: ${res.status}`);
@@ -70,4 +78,18 @@ export async function cancelOrder(token: string, orderId: string): Promise<void>
         headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error("Nu s-a putut anula comanda");
+}
+
+export async function downloadInvoice(token: string, orderId: string): Promise<void> {
+    const res = await fetch(`${BASE}/api/order/${orderId}/invoice`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Nu s-a putut descărca factura");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `factura-${orderId.slice(0, 8).toUpperCase()}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
 }

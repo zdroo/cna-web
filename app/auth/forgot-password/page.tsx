@@ -10,9 +10,17 @@ export default function ForgotPasswordPage() {
     const [submitted, setSubmitted] = useState(false);
     const [error, setError]       = useState<string | null>(null);
 
+    function isValidEmail(value: string) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError(null);
+        if (!isValidEmail(email)) {
+            setError("Adresa de email nu este validă.");
+            return;
+        }
         setLoading(true);
         try {
             await forgotPassword(email);

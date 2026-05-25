@@ -6,6 +6,7 @@ export interface FavoriteItem {
     name: string;
     brand: string | null;
     price: number;
+    discountedPrice: number | null;
     primaryImageUrl: string | null;
     stockQuantity: number;
 }

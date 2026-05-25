@@ -15,9 +15,9 @@ export default function UnpaidOrderBanner() {
     useEffect(() => {
         if (!isLoaded || !user) return;
 
-        getOrders(token!)
-            .then((orders) => {
-                const pending = orders.find((o) => !o.isPaid && o.status !== 4);
+        getOrders(token!, 1, 50)
+            .then((result) => {
+                const pending = result.items.find((o) => !o.isPaid && o.status !== 4);
                 setUnpaidOrder(pending ?? null);
             })
             .catch(() => {});
