@@ -62,7 +62,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased">
+      <body className="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased flex flex-col min-h-screen">
         <GoogleProvider>
           <AuthProvider>
             <ThemeProvider>
@@ -70,7 +70,7 @@ export default function RootLayout({
                 <FavoritesProvider>
                   <Navbar />
                   <UnpaidOrderBanner />
-                  <main className="max-w-7xl mx-auto px-4 py-8">
+                  <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
                     {children}
                   </main>
                   <Footer />

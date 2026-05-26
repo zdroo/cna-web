@@ -67,7 +67,8 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         async (variantId: string) => {
             const existingId = favorites.get(variantId);
             if (existingId) {
-                await removeFavorite(existingId);
+                const sessionId = token ? undefined : getOrCreateSessionId();
+                await removeFavorite(existingId, token ?? undefined, sessionId);
                 setFavorites((prev) => { const m = new Map(prev); m.delete(variantId); return m; });
                 setItems((prev) => prev.filter((i) => i.productVariantId !== variantId));
             } else {
@@ -88,10 +89,11 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     );
 
     const removeItem = useCallback(async (favoriteItemId: string, variantId: string) => {
-        await removeFavorite(favoriteItemId);
+        const sessionId = token ? undefined : getOrCreateSessionId();
+        await removeFavorite(favoriteItemId, token ?? undefined, sessionId);
         setFavorites((prev) => { const m = new Map(prev); m.delete(variantId); return m; });
         setItems((prev) => prev.filter((i) => i.favoriteItemId !== favoriteItemId));
-    }, []);
+    }, [token]);
 
     return (
         <FavoritesContext.Provider value={{ favorites, items, isLoaded, toggle, removeItem }}>

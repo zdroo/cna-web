@@ -127,8 +127,8 @@ export async function checkout(
         body: JSON.stringify({ shippingContactId, cartItemIds, isB2B, paymentMethod }),
     });
     if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || "Comanda nu a putut fi plasată");
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.message || "Comanda nu a putut fi plasată");
     }
     return res.json();
 }

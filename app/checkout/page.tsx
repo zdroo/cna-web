@@ -71,6 +71,7 @@ export default function CheckoutPage() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        if (loading) return;
         setError(null);
 
         let contactId = selectedContactId;

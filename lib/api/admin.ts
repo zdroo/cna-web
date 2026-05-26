@@ -95,15 +95,24 @@ export async function adminGetRevenueStats(token: string, granularity: RevenueGr
     return res.json();
 }
 
+export interface AdminOrdersPagedResult {
+    items: OrderAdmin[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
 export async function adminGetOrders(
     token: string,
-    params?: { status?: number; isPaid?: boolean }
-): Promise<OrderAdmin[]> {
+    params?: { status?: number; isPaid?: boolean; page?: number; pageSize?: number }
+): Promise<AdminOrdersPagedResult> {
     const qs = new URLSearchParams();
     if (params?.status !== undefined) qs.set("orderStatus", String(params.status));
     if (params?.isPaid !== undefined) qs.set("isPaid", String(params.isPaid));
-    const url = `${BASE}/api/order/admin${qs.toString() ? "?" + qs : ""}`;
-    const res = await fetch(url, { headers: authHeaders(token), cache: "no-store" });
+    qs.set("page", String(Math.max(1, params?.page ?? 1)));
+    qs.set("pageSize", String(Math.min(50, Math.max(1, params?.pageSize ?? 20))));
+    const res = await fetch(`${BASE}/api/order/admin?${qs}`, { headers: authHeaders(token), cache: "no-store" });
     if (!res.ok) throw new Error("Failed to fetch orders");
     return res.json();
 }

@@ -112,18 +112,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+    function safeRedirect(): string {
+        const redirect = new URLSearchParams(window.location.search).get("redirect");
+        return redirect?.startsWith("/") ? redirect : "/";
+    }
+
     const login = useCallback(async (email: string, password: string) => {
         const res = await apiLogin(email, password);
         applyAuth(res.token, res.refreshToken);
-        const redirect = new URLSearchParams(window.location.search).get("redirect");
-        router.push(redirect ?? "/");
+        router.push(safeRedirect());
     }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const loginWithGoogle = useCallback(async (idToken: string) => {
         const res = await apiGoogleLogin(idToken);
         applyAuth(res.token, res.refreshToken);
-        const redirect = new URLSearchParams(window.location.search).get("redirect");
-        router.push(redirect ?? "/");
+        router.push(safeRedirect());
     }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const register = useCallback(async (email: string, password: string) => {

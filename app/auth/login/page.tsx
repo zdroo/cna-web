@@ -39,9 +39,15 @@ export default function LoginPage() {
             setError("Adresa de email nu este validă.");
             return;
         }
-        if (mode === "register" && password !== confirmPassword) {
-            setError("Parolele nu coincid");
-            return;
+        if (mode === "register") {
+            if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+                setError("Parola nu îndeplinește cerințele de securitate.");
+                return;
+            }
+            if (password !== confirmPassword) {
+                setError("Parolele nu coincid");
+                return;
+            }
         }
         setLoading(true);
         try {
@@ -169,6 +175,20 @@ export default function LoginPage() {
                                     placeholder="••••••••"
                                     className="border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-500 focus:border-transparent transition"
                                 />
+                                {mode === "register" && password.length > 0 && (
+                                    <ul className="flex flex-col gap-0.5 mt-1">
+                                        {[
+                                            { ok: password.length >= 8, label: "Minim 8 caractere" },
+                                            { ok: /[A-Z]/.test(password), label: "Cel puțin o literă mare" },
+                                            { ok: /[0-9]/.test(password), label: "Cel puțin o cifră" },
+                                        ].map(({ ok, label }) => (
+                                            <li key={label} className={`text-xs flex items-center gap-1.5 ${ok ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}>
+                                                <span className="text-base leading-none">{ok ? "✓" : "·"}</span>
+                                                {label}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
 
                             {mode === "register" && (

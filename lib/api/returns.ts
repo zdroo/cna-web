@@ -54,7 +54,10 @@ export async function getUserReturnRequests(token: string): Promise<ReturnReques
     const res = await fetch(`${BASE}/api/returns`, {
         headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) throw new Error("Nu s-au putut încărca cererile de retur.");
+    if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.message || "Nu s-au putut încărca cererile de retur.");
+    }
     return res.json();
 }
 

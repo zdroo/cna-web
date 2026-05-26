@@ -25,7 +25,7 @@ interface SlugPage {
 async function fetchAllVariantSlugs(): Promise<VariantSlug[]> {
     try {
         const firstPage = await fetch(
-            `${BASE}/api/products/variants-filtered?onlyActive=true&page=1&pageSize=200`,
+            `${BASE}/api/products/variants-filtered?onlyActive=true&page=1&pageSize=100`,
             { next: { revalidate: 3600 } }
         );
         if (!firstPage.ok) return [];
@@ -36,7 +36,7 @@ async function fetchAllVariantSlugs(): Promise<VariantSlug[]> {
             const pages = Array.from({ length: data.totalPages - 1 }, (_, i) => i + 2);
             const results = await Promise.all(
                 pages.map((p) =>
-                    fetch(`${BASE}/api/products/variants-filtered?onlyActive=true&page=${p}&pageSize=200`, {
+                    fetch(`${BASE}/api/products/variants-filtered?onlyActive=true&page=${p}&pageSize=100`, {
                         next: { revalidate: 3600 },
                     })
                         .then((r) => (r.ok ? r.json() : null))

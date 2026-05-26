@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useState } from "react";
 import PageSpinner from "@/components/ui/PageSpinner";
-import { ChevronDown, ChevronUp, Package } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
     adminGetOrders,
@@ -56,15 +56,31 @@ export default function AdminComenziPage() {
     const [activeTab, setActiveTab] = useState<number | undefined>(undefined);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [updating, setUpdating] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const PAGE_SIZE = 20;
+
+    useEffect(() => {
+        setPage(1);
+    }, [activeTab]);
 
     useEffect(() => {
         if (!token) return;
         setLoading(true);
-        adminGetOrders(token, activeTab !== undefined ? { status: activeTab } : undefined)
-            .then(setOrders)
+        adminGetOrders(token, {
+            ...(activeTab !== undefined ? { status: activeTab } : {}),
+            page,
+            pageSize: PAGE_SIZE,
+        })
+            .then((data) => {
+                setOrders(data.items);
+                setTotalPages(data.totalPages);
+                setTotalCount(data.totalCount);
+            })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [token, activeTab]);
+    }, [token, activeTab, page]);
 
     async function handleStatusUpdate(orderId: string, newStatus: number) {
         if (!token) return;
@@ -119,23 +135,17 @@ export default function AdminComenziPage() {
         setExpandedId((prev) => (prev === id ? null : id));
     }
 
-    const counts = TABS.slice(1).reduce<Record<number, number>>((acc, tab) => {
-        acc[tab.value as number] = orders.filter((o) => o.status === tab.value).length;
-        return acc;
-    }, {});
-
     return (
         <div className="flex flex-col gap-6">
             <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Comenzi</h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">{orders.length} comenzi</p>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">{totalCount} comenzi</p>
             </div>
 
             {/* Tabs */}
             <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 w-fit flex-wrap">
                 {TABS.map((tab) => {
                     const active = activeTab === tab.value;
-                    const count = tab.value !== undefined ? counts[tab.value] ?? 0 : orders.length;
                     return (
                         <button
                             key={String(tab.value)}
@@ -147,9 +157,9 @@ export default function AdminComenziPage() {
                             }`}
                         >
                             {tab.label}
-                            {!loading && (
-                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${active ? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400" : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>
-                                    {count}
+                            {active && !loading && (
+                                <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                                    {totalCount}
                                 </span>
                             )}
                         </button>
@@ -309,6 +319,28 @@ export default function AdminComenziPage() {
                     </table>
                 )}
             </div>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3">
+                    <button
+                        onClick={() => setPage((p) => p - 1)}
+                        disabled={page <= 1 || loading}
+                        className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Pagina {page} din {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setPage((p) => p + 1)}
+                        disabled={page >= totalPages || loading}
+                        className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, FolderOpen, Layers, Ruler, ShoppingCart, BarChart2, Users, RotateCcw, ChevronRight, LogOut } from "lucide-react";
+import { LayoutDashboard, Package, FolderOpen, Layers, Ruler, ShoppingCart, BarChart2, Users, RotateCcw, ChevronRight, LogOut, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const NAV = [
@@ -39,6 +39,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <aside className="w-56 flex-shrink-0 sticky top-24">
                 <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
                     <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-800">
+                        <Link href="/profil" className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors mb-2">
+                            <ArrowLeft size={12} />
+                            Profil
+                        </Link>
                         <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-widest font-semibold">Admin</p>
                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-0.5 truncate">{user.email}</p>
                     </div>

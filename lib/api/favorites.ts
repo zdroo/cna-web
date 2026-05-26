@@ -29,9 +29,18 @@ export async function addFavorite(productVariantId: string, token?: string, sess
     return response.json();
 }
 
-export async function removeFavorite(favoriteItemId: string): Promise<void> {
-    const response = await fetch(`${BASE}/api/favorites/${favoriteItemId}`, {
-        method: "DELETE",
-    });
+export async function removeFavorite(
+    favoriteItemId: string,
+    token?: string,
+    sessionId?: string
+): Promise<void> {
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const url = sessionId
+        ? `${BASE}/api/favorites/${favoriteItemId}?sessionId=${sessionId}`
+        : `${BASE}/api/favorites/${favoriteItemId}`;
+
+    const response = await fetch(url, { method: "DELETE", headers });
     if (!response.ok) throw new Error("Failed to remove favorite");
 }

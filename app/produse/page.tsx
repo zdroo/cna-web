@@ -570,7 +570,7 @@ function ProduseContent() {
             maxPrice,
             // When a product is selected load all its variants (small set) for client-side attr filtering
             page:     selectedProductSlug ? 1 : page,
-            pageSize: selectedProductSlug ? 200 : 24,
+            pageSize: selectedProductSlug ? 100 : 24,
         })
             .then(data => {
                 if (!cancelled) {
