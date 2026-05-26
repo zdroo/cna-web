@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { getCategoriesWithProducts } from "@/lib/api/categories";
-import { getVariantsFiltered } from "@/lib/api/products";
 import HomeContent from "@/components/home/HomeContent";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://cnashop.ro";
@@ -42,12 +41,7 @@ const websiteJsonLd = {
 };
 
 export default async function HomePage() {
-    const [categories, variantsResult] = await Promise.all([
-        getCategoriesWithProducts(),
-        getVariantsFiltered({ onlyActive: true, pageSize: 100 }),
-    ]);
-
-    const popular = variantsResult.items;
+    const categories = await getCategoriesWithProducts();
 
     return (
         <>
@@ -56,7 +50,7 @@ export default async function HomePage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
             />
 
-            <HomeContent categories={categories} allVariants={popular} />
+            <HomeContent categories={categories} />
         </>
     );
 }

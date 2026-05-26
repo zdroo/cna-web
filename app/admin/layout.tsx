@@ -82,6 +82,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* Content */}
             <div className="flex-1 min-w-0">
+                {pathname !== "/admin" && (
+                    <Link
+                        href={pathname.split("/").slice(0, -1).join("/") || "/admin"}
+                        className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors mb-5"
+                    >
+                        <ArrowLeft size={16} />
+                        Înapoi
+                    </Link>
+                )}
                 {children}
             </div>
         </div>

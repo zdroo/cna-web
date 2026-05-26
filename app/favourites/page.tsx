@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Heart, Trash2, ArrowLeft } from "lucide-react";
 import { useFavorites } from "@/context/FavoritesContext";
 
 export default function FavouritesPage() {
     const { items, removeItem, isLoaded } = useFavorites();
+    const router = useRouter();
 
     if (!isLoaded) {
         return (
@@ -20,6 +22,9 @@ export default function FavouritesPage() {
         <div className="flex flex-col gap-8">
 
             <div className="flex items-center gap-3">
+                <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                    <ArrowLeft size={20} />
+                </button>
                 <Heart size={28} className="text-red-500 fill-red-500" />
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Favorite</h1>
                 <span className="text-gray-400 dark:text-gray-500 text-sm mt-1">({items.length} produse)</span>

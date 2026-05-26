@@ -4,53 +4,50 @@ import { useState, useEffect, useCallback } from "react";
 import PageSpinner from "@/components/ui/PageSpinner";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { getOrders, cancelOrder, downloadInvoice, Order, OrderStatus } from "@/lib/api/orders";
-import { createReturnRequest } from "@/lib/api/returns";
-import { PackageSearch, X, RotateCcw, Clock, BadgeCheck, Truck, PackageCheck, Check, Loader2, Building2, FileText, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { getOrders, cancelOrder, downloadInvoice, Order, OrderStatus, STATUS_ORDER } from "@/lib/api/orders";
+import { createReturnRequest, getUserReturnRequests, ReturnRequest } from "@/lib/api/returns";
+import { PackageSearch, X, RotateCcw, Clock, BadgeCheck, Truck, PackageCheck, Check, Loader2, Building2, FileText, Download, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import Link from "next/link";
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
-    0: "În așteptare",
-    1: "Confirmată",
-    2: "Expediată",
-    3: "Livrată",
-    4: "Anulată",
+    Pending:   "În așteptare",
+    Confirmed: "Confirmată",
+    Shipped:   "Expediată",
+    Delivered: "Livrată",
+    Cancelled: "Anulată",
 };
 
 const STATUS_STYLE: Record<OrderStatus, string> = {
-    0: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300",
-    1: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
-    2: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
-    3: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
-    4: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+    Pending:   "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300",
+    Confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+    Shipped:   "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
+    Delivered: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
+    Cancelled: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
 };
 
-const STEPS = [
-    { status: 0, label: "Plasată",    Icon: Clock },
-    { status: 1, label: "Confirmată", Icon: BadgeCheck },
-    { status: 2, label: "Expediată",  Icon: Truck },
-    { status: 3, label: "Livrată",    Icon: PackageCheck },
-] as const;
+const STEPS: { status: OrderStatus; label: string; Icon: React.ElementType }[] = [
+    { status: "Pending",   label: "Plasată",    Icon: Clock },
+    { status: "Confirmed", label: "Confirmată", Icon: BadgeCheck },
+    { status: "Shipped",   label: "Expediată",  Icon: Truck },
+    { status: "Delivered", label: "Livrată",    Icon: PackageCheck },
+];
 
 function StatusStepper({ status }: { status: OrderStatus }) {
+    const currentOrder = STATUS_ORDER[status];
     return (
         <div className="flex items-start">
             {STEPS.map(({ status: stepStatus, label, Icon }, i) => {
-                const reached = status >= stepStatus;
+                const stepOrder = STATUS_ORDER[stepStatus];
+                const reached = currentOrder >= stepOrder;
                 const current = status === stepStatus;
                 const isLast  = i === STEPS.length - 1;
                 return (
                     <div key={stepStatus} className="flex items-start flex-1">
-                        <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                        <div className="flex flex-col items-center gap-1.5 shrink-0">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                                reached
-                                    ? "bg-gray-900 dark:bg-gray-100"
-                                    : "bg-gray-100 dark:bg-gray-800"
+                                reached ? "bg-gray-900 dark:bg-gray-100" : "bg-gray-100 dark:bg-gray-800"
                             }`}>
-                                {reached
-                                    ? <Icon size={14} className="text-white dark:text-gray-900" />
-                                    : <Icon size={14} className="text-gray-300 dark:text-gray-600" />
-                                }
+                                <Icon size={14} className={reached ? "text-white dark:text-gray-900" : "text-gray-300 dark:text-gray-600"} />
                             </div>
                             <span className={`text-xs text-center leading-tight ${
                                 current
@@ -64,9 +61,7 @@ function StatusStepper({ status }: { status: OrderStatus }) {
                         </div>
                         {!isLast && (
                             <div className={`flex-1 h-0.5 mt-4 mx-1.5 rounded-full transition-colors ${
-                                status > stepStatus
-                                    ? "bg-gray-900 dark:bg-gray-100"
-                                    : "bg-gray-100 dark:bg-gray-800"
+                                currentOrder > stepOrder ? "bg-gray-900 dark:bg-gray-100" : "bg-gray-100 dark:bg-gray-800"
                             }`} />
                         )}
                     </div>
@@ -84,16 +79,29 @@ interface ReturnItemState {
     maxQuantity: number;
     selected: boolean;
     quantity: number;
+    isReturnable: boolean;
 }
 
 interface ReturnModalProps {
     order: Order;
     token: string;
+    existingReturns: ReturnRequest[];
     onClose: () => void;
     onSuccess: () => void;
 }
 
-function ReturnModal({ order, token, onClose, onSuccess }: ReturnModalProps) {
+function ReturnModal({ order, token, existingReturns, onClose, onSuccess }: ReturnModalProps) {
+    const activeReturnItemIds = new Set(
+        existingReturns
+            .filter((r) => r.orderId === order.orderId && (r.status === "Pending" || r.status === "Approved" || r.status === "InTransit" || r.status === "Received"))
+            .flatMap((r) => r.items.map((i) => i.orderItemId))
+    );
+    const refundedItemIds = new Set(
+        existingReturns
+            .filter((r) => r.orderId === order.orderId && r.status === "Refunded")
+            .flatMap((r) => r.items.map((i) => i.orderItemId))
+    );
+
     const [items, setItems] = useState<ReturnItemState[]>(
         order.items.map((i) => ({
             orderItemId: i.orderItemId,
@@ -101,6 +109,7 @@ function ReturnModal({ order, token, onClose, onSuccess }: ReturnModalProps) {
             maxQuantity: i.quantity,
             selected: false,
             quantity: 1,
+            isReturnable: i.isReturnable,
         }))
     );
     const [reason, setReason] = useState("");
@@ -108,20 +117,18 @@ function ReturnModal({ order, token, onClose, onSuccess }: ReturnModalProps) {
     const [error, setError] = useState<string | null>(null);
 
     const selectedItems = items.filter((i) => i.selected);
-    const canSubmit = selectedItems.length > 0 && reason.trim().length >= 10;
+    const hasItems = selectedItems.length > 0;
+    const hasReason = reason.trim().length >= 10;
+    const canSubmit = hasItems && hasReason;
 
     function toggleItem(idx: number) {
-        setItems((prev) =>
-            prev.map((item, i) => (i === idx ? { ...item, selected: !item.selected } : item))
-        );
+        setItems((prev) => prev.map((item, i) => i === idx ? { ...item, selected: !item.selected } : item));
     }
 
     function setQty(idx: number, value: number) {
         setItems((prev) =>
             prev.map((item, i) =>
-                i === idx
-                    ? { ...item, quantity: Math.max(1, Math.min(value, item.maxQuantity)) }
-                    : item
+                i === idx ? { ...item, quantity: Math.max(1, Math.min(value, item.maxQuantity)) } : item
             )
         );
     }
@@ -150,7 +157,6 @@ function ReturnModal({ order, token, onClose, onSuccess }: ReturnModalProps) {
         >
             <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
 
-                {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                     <div>
                         <h2 className="font-semibold text-gray-900 dark:text-gray-100">Solicită retur</h2>
@@ -164,56 +170,92 @@ function ReturnModal({ order, token, onClose, onSuccess }: ReturnModalProps) {
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
-
-                    {/* Item selection */}
                     <div>
                         <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Selectează produsele de returnat
                         </p>
                         <div className="flex flex-col gap-2">
-                            {items.map((item, idx) => (
-                                <div
-                                    key={item.orderItemId}
-                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-colors cursor-pointer select-none ${
-                                        item.selected
-                                            ? "border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-800"
-                                            : "border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
-                                    }`}
-                                    onClick={() => toggleItem(idx)}
-                                >
-                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                                        item.selected
-                                            ? "bg-gray-900 dark:bg-gray-100 border-gray-900 dark:border-gray-100"
-                                            : "border-gray-300 dark:border-gray-600"
-                                    }`}>
-                                        {item.selected && <Check size={11} className="text-white dark:text-gray-900" />}
-                                    </div>
-                                    <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{item.productName}</span>
-                                    {item.selected && item.maxQuantity > 1 && (
-                                        <div
-                                            className="flex items-center gap-1"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <button
-                                                className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                                                onClick={() => setQty(idx, item.quantity - 1)}
-                                            >−</button>
-                                            <span className="w-5 text-center text-sm font-medium text-gray-900 dark:text-gray-100">{item.quantity}</span>
-                                            <button
-                                                className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                                                onClick={() => setQty(idx, item.quantity + 1)}
-                                            >+</button>
+                            {items.map((item, idx) => {
+                                const hasActiveReturn = activeReturnItemIds.has(item.orderItemId);
+                                const alreadyRefunded = refundedItemIds.has(item.orderItemId);
+                                const blocked = hasActiveReturn || alreadyRefunded || !item.isReturnable;
+                                return (
+                                    <div
+                                        key={item.orderItemId}
+                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-colors select-none ${
+                                            hasActiveReturn
+                                                ? "border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/40 cursor-default opacity-75"
+                                                : alreadyRefunded
+                                                    ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/40 cursor-default opacity-75"
+                                                    : !item.isReturnable
+                                                        ? "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 cursor-default opacity-60"
+                                                        : item.selected
+                                                            ? "border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-800 cursor-pointer"
+                                                            : "border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                                        }`}
+                                        onClick={() => { if (!blocked) toggleItem(idx); }}
+                                    >
+                                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                                            hasActiveReturn
+                                                ? "border-orange-300 dark:border-orange-700 bg-orange-100 dark:bg-orange-900"
+                                                : alreadyRefunded
+                                                    ? "border-green-300 dark:border-green-700 bg-green-100 dark:bg-green-900"
+                                                    : !item.isReturnable
+                                                        ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700"
+                                                        : item.selected
+                                                            ? "bg-gray-900 dark:bg-gray-100 border-gray-900 dark:border-gray-100"
+                                                            : "border-gray-300 dark:border-gray-600"
+                                        }`}>
+                                            {hasActiveReturn
+                                                ? <RotateCcw size={10} className="text-orange-500 dark:text-orange-400" />
+                                                : alreadyRefunded
+                                                    ? <Check size={11} className="text-green-600 dark:text-green-400" />
+                                                    : !item.isReturnable
+                                                        ? null
+                                                        : item.selected && <Check size={11} className="text-white dark:text-gray-900" />
+                                            }
                                         </div>
-                                    )}
-                                    {(!item.selected || item.maxQuantity === 1) && (
-                                        <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">× {item.maxQuantity}</span>
-                                    )}
-                                </div>
-                            ))}
+                                        <span className={`flex-1 text-sm ${
+                                            hasActiveReturn ? "text-orange-700 dark:text-orange-300"
+                                            : alreadyRefunded ? "text-green-700 dark:text-green-300"
+                                            : !item.isReturnable ? "text-gray-400 dark:text-gray-500"
+                                            : "text-gray-800 dark:text-gray-200"
+                                        }`}>
+                                            {item.productName}
+                                        </span>
+                                        {hasActiveReturn ? (
+                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-400 shrink-0">
+                                                Retur deschis
+                                            </span>
+                                        ) : alreadyRefunded ? (
+                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 shrink-0">
+                                                Rambursat
+                                            </span>
+                                        ) : !item.isReturnable ? (
+                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 shrink-0">
+                                                Nereturabil
+                                            </span>
+                                        ) : item.selected && item.maxQuantity > 1 ? (
+                                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                <button
+                                                    className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                                    onClick={() => setQty(idx, item.quantity - 1)}
+                                                >−</button>
+                                                <span className="w-5 text-center text-sm font-medium text-gray-900 dark:text-gray-100">{item.quantity}</span>
+                                                <button
+                                                    className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                                    onClick={() => setQty(idx, item.quantity + 1)}
+                                                >+</button>
+                                            </div>
+                                        ) : !blocked ? (
+                                            <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">× {item.maxQuantity}</span>
+                                        ) : null}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* Reason */}
                     <div>
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">
                             Motivul returului <span className="text-red-400">*</span>
@@ -235,22 +277,29 @@ function ReturnModal({ order, token, onClose, onSuccess }: ReturnModalProps) {
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 flex gap-2">
-                    <button
-                        onClick={onClose}
-                        className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                    >
-                        Anulează
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={!canSubmit || submitting}
-                        className="flex-1 py-2.5 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold hover:bg-gray-700 dark:hover:bg-gray-300 disabled:opacity-40 transition-colors flex items-center justify-center gap-2"
-                    >
-                        {submitting && <Loader2 size={15} className="animate-spin" />}
-                        {submitting ? "Se trimite..." : "Trimite cererea"}
-                    </button>
+                <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2">
+                    {!canSubmit && !submitting && (
+                        <ul className="text-xs text-gray-400 dark:text-gray-500 list-disc list-inside space-y-0.5">
+                            {!hasItems && <li>Selectează cel puțin un produs</li>}
+                            {!hasReason && <li>Motivul trebuie să aibă minim 10 caractere</li>}
+                        </ul>
+                    )}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onClose}
+                            className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        >
+                            Anulează
+                        </button>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={!canSubmit || submitting}
+                            className="flex-1 py-2.5 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold enabled:hover:bg-gray-600 enabled:hover:shadow-md dark:enabled:hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                        >
+                            {submitting && <Loader2 size={15} className="animate-spin" />}
+                            {submitting ? "Se trimite..." : "Trimite cererea"}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -264,6 +313,7 @@ export default function ComenziPage() {
     const { user, token, isLoaded } = useAuth();
 
     const [orders, setOrders] = useState<Order[]>([]);
+    const [existingReturns, setExistingReturns] = useState<ReturnRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -276,9 +326,13 @@ export default function ComenziPage() {
     const fetchOrders = useCallback(async (p: number) => {
         setLoading(true);
         try {
-            const data = await getOrders(token!, p);
+            const [data, returns] = await Promise.all([
+                getOrders(token!, p),
+                getUserReturnRequests(token!),
+            ]);
             setOrders(data.items);
             setTotalPages(data.totalPages);
+            setExistingReturns(returns);
         } catch {
             setError("Nu s-au putut încărca comenzile.");
         } finally {
@@ -329,6 +383,8 @@ export default function ComenziPage() {
         const placed = new Date(order.createdAt).getTime();
         return Date.now() - placed <= 30 * 24 * 60 * 60 * 1000;
     };
+
+    const canCancel = (order: Order) => STATUS_ORDER[order.status] < STATUS_ORDER["Shipped"];
 
     return (
         <div className="flex flex-col gap-8">
@@ -396,7 +452,7 @@ export default function ComenziPage() {
                             </div>
 
                             {/* Status stepper */}
-                            {order.status !== 4 && (
+                            {order.status !== "Cancelled" && (
                                 <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-4">
                                     <StatusStepper status={order.status} />
                                 </div>
@@ -419,6 +475,27 @@ export default function ComenziPage() {
                                         <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">{order.awbNumber}</span>
                                     )}
                                     {order.carrierName && <span className="text-xs text-gray-400 dark:text-gray-500">({order.carrierName})</span>}
+                                </div>
+                            )}
+
+                            {/* Shipping address */}
+                            {order.shippingAddress && (
+                                <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3">
+                                    <div className="flex items-start gap-2">
+                                        <MapPin size={14} className="text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                                        <div className="flex flex-col gap-0.5">
+                                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5">Adresă livrare</p>
+                                            <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">{order.shippingAddress.fullName}</p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">{order.shippingAddress.phoneNumber}</p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                {order.shippingAddress.addressLine1}
+                                                {order.shippingAddress.addressLine2 && `, ${order.shippingAddress.addressLine2}`}
+                                            </p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                {order.shippingAddress.city}, {order.shippingAddress.region} {order.shippingAddress.postalCode}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
@@ -457,7 +534,7 @@ export default function ComenziPage() {
                                         </p>
                                     )}
                                     <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                        <span>Valoare fără TVA: <strong className="text-gray-700 dark:text-gray-300">{order.netAmount.toFixed(2)} lei</strong></span>
+                                        <span>Fără TVA: <strong className="text-gray-700 dark:text-gray-300">{order.netAmount.toFixed(2)} lei</strong></span>
                                         <span>TVA ({(order.vatRate * 100).toFixed(0)}%): <strong className="text-gray-700 dark:text-gray-300">{order.vatAmount.toFixed(2)} lei</strong></span>
                                     </div>
                                     {order.paymentMethod === "NetPayment" && (
@@ -470,26 +547,36 @@ export default function ComenziPage() {
 
                             {/* Items */}
                             <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3 flex flex-col gap-2">
+                                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">Produse</p>
                                 {order.items.map((item) => (
-                                    <div key={item.orderItemId} className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
-                                        <Link
-                                            href={`/produse/${item.productSlug}/${item.variantSlug}`}
-                                            className="hover:text-gray-900 dark:hover:text-gray-100 hover:underline transition-colors"
-                                        >
-                                            {item.productName}{" "}
-                                            <span className="text-gray-400 dark:text-gray-500">× {item.quantity}</span>
-                                        </Link>
-                                        <span className="flex-shrink-0 font-medium text-gray-900 dark:text-gray-100 ml-4">
+                                    <div key={item.orderItemId} className="flex justify-between items-start gap-4 text-sm">
+                                        <div className="flex flex-col gap-0.5 min-w-0">
+                                            <Link
+                                                href={`/produse/${item.productSlug}/${item.variantSlug}`}
+                                                className="text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 hover:underline transition-colors truncate"
+                                            >
+                                                {item.productName}
+                                            </Link>
+                                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                                                {item.price.toFixed(2)} lei × {item.quantity}
+                                            </span>
+                                        </div>
+                                        <span className="shrink-0 font-medium text-gray-900 dark:text-gray-100">
                                             {item.total.toFixed(2)} lei
                                         </span>
                                     </div>
                                 ))}
+                                <div className="flex justify-end pt-2 border-t border-gray-50 dark:border-gray-800 mt-1">
+                                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                                        Total: {order.totalAmount.toFixed(2)} lei
+                                    </span>
+                                </div>
                             </div>
 
                             {/* Actions */}
-                            {(order.status < 2 || (order.status === 3 && isWithin30Days(order))) && (
+                            {(canCancel(order) || (order.status === "Delivered" && isWithin30Days(order))) && (
                                 <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3 flex items-center justify-end gap-3">
-                                    {order.status < 2 && (
+                                    {canCancel(order) && (
                                         <button
                                             onClick={() => handleCancel(order.orderId)}
                                             disabled={cancelling === order.orderId}
@@ -499,7 +586,7 @@ export default function ComenziPage() {
                                             {cancelling === order.orderId ? "Se anulează..." : "Anulează"}
                                         </button>
                                     )}
-                                    {order.status === 3 && isWithin30Days(order) && (
+                                    {order.status === "Delivered" && isWithin30Days(order) && (
                                         <button
                                             onClick={() => setReturnOrder(order)}
                                             className="flex items-center gap-1.5 text-sm text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 px-3 py-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950 transition-colors"
@@ -541,6 +628,7 @@ export default function ComenziPage() {
                 <ReturnModal
                     order={returnOrder}
                     token={token!}
+                    existingReturns={existingReturns}
                     onClose={() => setReturnOrder(null)}
                     onSuccess={handleReturnSuccess}
                 />

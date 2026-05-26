@@ -17,6 +17,7 @@ import {
     UserCircle,
     Moon,
     Building2,
+    ArrowLeft,
 } from "lucide-react";
 
 interface ProfileCard {
@@ -133,6 +134,11 @@ export default function ProfilePage() {
     }
 
     return (
+        <div>
+            <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors mb-6 block">
+                <ArrowLeft size={20} />
+            </button>
+
         <div className="max-w-lg mx-auto">
 
             {/* Header cu toggle temă dreapta sus */}
@@ -181,6 +187,7 @@ export default function ProfilePage() {
                 <LogOut size={18} />
                 Deconectare
             </button>
+        </div>
         </div>
     );
 }

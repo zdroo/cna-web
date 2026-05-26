@@ -1,19 +1,27 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
-export type ReturnStatus = 0 | 1 | 2 | 3; // Pending | Approved | Rejected | Refunded
+export type ReturnStatus = "Pending" | "Approved" | "Rejected" | "InTransit" | "Received" | "Refunded";
+
+export const RETURN_STATUS_ORDER: Record<ReturnStatus, number> = {
+    Pending: 0, Approved: 1, InTransit: 2, Received: 3, Refunded: 4, Rejected: 5,
+};
 
 export const RETURN_STATUS_LABEL: Record<ReturnStatus, string> = {
-    0: "În așteptare",
-    1: "Aprobat",
-    2: "Respins",
-    3: "Rambursat",
+    Pending:   "În așteptare",
+    Approved:  "Aprobat",
+    InTransit: "În tranzit",
+    Received:  "Primit",
+    Refunded:  "Rambursat",
+    Rejected:  "Respins",
 };
 
 export const RETURN_STATUS_STYLE: Record<ReturnStatus, string> = {
-    0: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300",
-    1: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
-    2: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
-    3: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+    Pending:   "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300",
+    Approved:  "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
+    InTransit: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+    Received:  "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
+    Refunded:  "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300",
+    Rejected:  "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
 };
 
 export interface ReturnItem {
@@ -30,6 +38,7 @@ export interface ReturnRequest {
     adminNotes: string | null;
     createdAt: string;
     items: ReturnItem[];
+    refundAmount: number;
 }
 
 export interface AdminReturnRequest extends ReturnRequest {
@@ -81,7 +90,7 @@ export async function getAdminReturnRequests(
     status?: ReturnStatus
 ): Promise<AdminReturnPagedResult> {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-    if (status !== undefined) params.set("status", String(status));
+    if (status !== undefined) params.set("status", status);
     const res = await fetch(`${BASE}/api/returns/admin?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
     });

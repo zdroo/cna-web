@@ -6,7 +6,6 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://cnashop.ro";
 const STATIC_ROUTES: MetadataRoute.Sitemap = [
     { url: SITE_URL, priority: 1.0, changeFrequency: "daily" },
     { url: `${SITE_URL}/produse`, priority: 0.9, changeFrequency: "daily" },
-    { url: `${SITE_URL}/categories`, priority: 0.8, changeFrequency: "weekly" },
     { url: `${SITE_URL}/contact`, priority: 0.5, changeFrequency: "monthly" },
     { url: `${SITE_URL}/despre-noi`, priority: 0.5, changeFrequency: "monthly" },
 ];

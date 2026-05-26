@@ -15,10 +15,12 @@ export interface OrderItemAdmin {
     productSlug: string;
 }
 
+export type OrderStatus = "Pending" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
+
 export interface OrderAdmin {
     orderId: string;
     totalAmount: number;
-    status: number; // 0=Pending 1=Confirmed 2=Shipped 3=Delivered 4=Cancelled
+    status: OrderStatus;
     items: OrderItemAdmin[];
     isPaid: boolean;
     createdAt: string;
@@ -105,10 +107,10 @@ export interface AdminOrdersPagedResult {
 
 export async function adminGetOrders(
     token: string,
-    params?: { status?: number; isPaid?: boolean; page?: number; pageSize?: number }
+    params?: { status?: OrderStatus; isPaid?: boolean; page?: number; pageSize?: number }
 ): Promise<AdminOrdersPagedResult> {
     const qs = new URLSearchParams();
-    if (params?.status !== undefined) qs.set("orderStatus", String(params.status));
+    if (params?.status !== undefined) qs.set("orderStatus", params.status);
     if (params?.isPaid !== undefined) qs.set("isPaid", String(params.isPaid));
     qs.set("page", String(Math.max(1, params?.page ?? 1)));
     qs.set("pageSize", String(Math.min(50, Math.max(1, params?.pageSize ?? 20))));
@@ -117,7 +119,7 @@ export async function adminGetOrders(
     return res.json();
 }
 
-export async function adminUpdateOrderStatus(token: string, orderId: string, newStatus: number): Promise<void> {
+export async function adminUpdateOrderStatus(token: string, orderId: string, newStatus: OrderStatus): Promise<void> {
     const res = await fetch(`${BASE}/api/order/${orderId}/status`, {
         method: "PUT", headers: authHeaders(token),
         body: JSON.stringify({ newStatus }),

@@ -14,11 +14,13 @@ import { ChevronDown, ChevronUp, Loader2, RotateCcw } from "lucide-react";
 import PageSpinner from "@/components/ui/PageSpinner";
 
 const TABS: { label: string; value: ReturnStatus | undefined }[] = [
-    { label: "Toate", value: undefined },
-    { label: "În așteptare", value: 0 },
-    { label: "Aprobate", value: 1 },
-    { label: "Respinse", value: 2 },
-    { label: "Rambursate", value: 3 },
+    { label: "Toate",         value: undefined },
+    { label: "În așteptare",  value: "Pending" },
+    { label: "Aprobate",      value: "Approved" },
+    { label: "În tranzit",    value: "InTransit" },
+    { label: "Primite",       value: "Received" },
+    { label: "Rambursate",    value: "Refunded" },
+    { label: "Respinse",      value: "Rejected" },
 ];
 
 const PAGE_SIZE = 20;
@@ -44,6 +46,7 @@ export default function AdminReturnsPage() {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [notes, setNotes] = useState<Record<string, string>>({});
     const [updating, setUpdating] = useState<string | null>(null);
+    const [confirmReceived, setConfirmReceived] = useState<string | null>(null);
 
     useEffect(() => {
         if (!token) return;
@@ -97,7 +100,7 @@ export default function AdminReturnsPage() {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 w-fit">
+            <div className="flex flex-wrap gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 w-fit">
                 {TABS.map((tab) => (
                     <button
                         key={String(tab.value)}
@@ -122,6 +125,7 @@ export default function AdminReturnsPage() {
                     {items.map((r) => {
                         const expanded = expandedId === r.returnRequestId;
                         const isUpdating = updating === r.returnRequestId;
+                        const isActionable = r.status === "Pending" || r.status === "Approved" || r.status === "InTransit" || r.status === "Received";
                         return (
                             <div
                                 key={r.returnRequestId}
@@ -149,16 +153,23 @@ export default function AdminReturnsPage() {
                                         </p>
                                         <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{r.userEmail}</p>
                                     </div>
-                                    <span className={`ml-auto shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${RETURN_STATUS_STYLE[r.status]}`}>
-                                        {RETURN_STATUS_LABEL[r.status]}
-                                    </span>
+                                    <div className="ml-auto flex items-center gap-2 shrink-0">
+                                        {r.refundAmount > 0 && (
+                                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                                {r.refundAmount.toFixed(2)} lei
+                                            </span>
+                                        )}
+                                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${RETURN_STATUS_STYLE[r.status]}`}>
+                                            {RETURN_STATUS_LABEL[r.status]}
+                                        </span>
+                                    </div>
                                     {expanded ? <ChevronUp size={16} className="shrink-0 text-gray-400" /> : <ChevronDown size={16} className="shrink-0 text-gray-400" />}
                                 </button>
 
                                 {/* Expanded panel */}
                                 {expanded && (
                                     <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-4 flex flex-col gap-4">
-                                        {/* Items */}
+                                        {/* Items + refund amount */}
                                         <div>
                                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Produse</p>
                                             <div className="flex flex-col gap-1">
@@ -169,6 +180,12 @@ export default function AdminReturnsPage() {
                                                     </div>
                                                 ))}
                                             </div>
+                                            {r.refundAmount > 0 && (
+                                                <div className="mt-2 pt-2 border-t border-gray-50 dark:border-gray-800 flex justify-between text-sm">
+                                                    <span className="text-gray-500 dark:text-gray-400">Total de rambursat</span>
+                                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{r.refundAmount.toFixed(2)} lei</span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Reason */}
@@ -191,8 +208,8 @@ export default function AdminReturnsPage() {
                                             <span>Comandă: <span className="font-mono font-medium text-gray-600 dark:text-gray-300">#{shortId(r.orderId)}</span></span>
                                         </div>
 
-                                        {/* Actions — only for actionable statuses */}
-                                        {(r.status === 0 || r.status === 1) && (
+                                        {/* Actions */}
+                                        {isActionable && (
                                             <div className="flex flex-col gap-3 pt-1 border-t border-gray-100 dark:border-gray-800">
                                                 <textarea
                                                     rows={2}
@@ -201,32 +218,80 @@ export default function AdminReturnsPage() {
                                                     onChange={(e) => setNotes((prev) => ({ ...prev, [r.returnRequestId]: e.target.value }))}
                                                     className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 resize-none"
                                                 />
-                                                <div className="flex gap-2">
-                                                    {r.status === 0 && (
+                                                <div className="flex gap-2 flex-wrap">
+                                                    {r.status === "Pending" && (
                                                         <>
                                                             <button
                                                                 disabled={isUpdating}
-                                                                onClick={() => handleUpdateStatus(r.returnRequestId, 1)}
+                                                                onClick={() => handleUpdateStatus(r.returnRequestId, "Approved")}
                                                                 className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-semibold transition-colors"
                                                             >
                                                                 {isUpdating ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Aprobă"}
                                                             </button>
                                                             <button
                                                                 disabled={isUpdating}
-                                                                onClick={() => handleUpdateStatus(r.returnRequestId, 2)}
+                                                                onClick={() => handleUpdateStatus(r.returnRequestId, "Rejected")}
                                                                 className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-semibold transition-colors"
                                                             >
                                                                 {isUpdating ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Respinge"}
                                                             </button>
                                                         </>
                                                     )}
-                                                    {r.status === 1 && (
+                                                    {r.status === "Approved" && (
+                                                        <>
+                                                            <button
+                                                                disabled={isUpdating}
+                                                                onClick={() => handleUpdateStatus(r.returnRequestId, "InTransit")}
+                                                                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-semibold transition-colors"
+                                                            >
+                                                                {isUpdating ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Preluat de curier"}
+                                                            </button>
+                                                            <button
+                                                                disabled={isUpdating}
+                                                                onClick={() => handleUpdateStatus(r.returnRequestId, "Rejected")}
+                                                                className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-semibold transition-colors"
+                                                            >
+                                                                {isUpdating ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Respinge"}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {r.status === "InTransit" && (
+                                                        confirmReceived === r.returnRequestId ? (
+                                                            <div className="flex-1 flex flex-col gap-2 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-xl p-3">
+                                                                <p className="text-sm font-medium text-purple-900 dark:text-purple-200">Confirmi că ai primit coletul de la curier?</p>
+                                                                <div className="flex gap-2">
+                                                                    <button
+                                                                        disabled={isUpdating}
+                                                                        onClick={() => { setConfirmReceived(null); handleUpdateStatus(r.returnRequestId, "Received"); }}
+                                                                        className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-1.5 rounded-lg text-sm font-semibold transition-colors"
+                                                                    >
+                                                                        {isUpdating ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Da, am primit"}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setConfirmReceived(null)}
+                                                                        className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                                                                    >
+                                                                        Anulează
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <button
+                                                                disabled={isUpdating}
+                                                                onClick={() => setConfirmReceived(r.returnRequestId)}
+                                                                className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-semibold transition-colors"
+                                                            >
+                                                                Colet primit
+                                                            </button>
+                                                        )
+                                                    )}
+                                                    {r.status === "Received" && (
                                                         <button
                                                             disabled={isUpdating}
-                                                            onClick={() => handleUpdateStatus(r.returnRequestId, 3)}
-                                                            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-semibold transition-colors"
+                                                            onClick={() => handleUpdateStatus(r.returnRequestId, "Refunded")}
+                                                            className="flex-1 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-semibold transition-colors"
                                                         >
-                                                            {isUpdating ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Marchează rambursat"}
+                                                            {isUpdating ? <Loader2 size={14} className="animate-spin mx-auto" /> : `Rambursează ${r.refundAmount.toFixed(2)} lei`}
                                                         </button>
                                                     )}
                                                 </div>

@@ -97,7 +97,7 @@ export default function ReturnsPage() {
                                         })}
                                     </p>
                                 </div>
-                                <span className={`text-xs font-semibold px-3 py-1 rounded-full flex-shrink-0 ${RETURN_STATUS_STYLE[r.status]}`}>
+                                <span className={`text-xs font-semibold px-3 py-1 rounded-full shrink-0 ${RETURN_STATUS_STYLE[r.status]}`}>
                                     {RETURN_STATUS_LABEL[r.status]}
                                 </span>
                             </div>
@@ -106,9 +106,15 @@ export default function ReturnsPage() {
                                 {r.items.map((item) => (
                                     <div key={item.orderItemId} className="flex justify-between text-sm">
                                         <span className="text-gray-700 dark:text-gray-300">{item.productName}</span>
-                                        <span className="text-gray-400 dark:text-gray-500 flex-shrink-0 ml-3">× {item.quantity}</span>
+                                        <span className="text-gray-400 dark:text-gray-500 shrink-0 ml-3">× {item.quantity}</span>
                                     </div>
                                 ))}
+                                {r.refundAmount > 0 && (
+                                    <div className="flex justify-between text-sm pt-1.5 border-t border-gray-50 dark:border-gray-800 mt-0.5">
+                                        <span className="text-gray-500 dark:text-gray-400">Sumă de returnat</span>
+                                        <span className="font-semibold text-gray-800 dark:text-gray-200">{r.refundAmount.toFixed(2)} lei</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="border-t border-gray-50 dark:border-gray-800 px-4 py-3">
@@ -141,7 +147,7 @@ export default function ReturnsPage() {
                 <div className="flex flex-col gap-4">
                     {HOW_IT_WORKS.map((step, i) => (
                         <div key={i} className="flex gap-3 items-start">
-                            <div className={`p-2 rounded-xl flex-shrink-0 ${step.accent}`}>
+                            <div className={`p-2 rounded-xl shrink-0 ${step.accent}`}>
                                 {step.icon}
                             </div>
                             <div>
@@ -154,7 +160,7 @@ export default function ReturnsPage() {
             </div>
 
             <div className="flex items-start gap-3 text-sm text-gray-500 dark:text-gray-400 px-1">
-                <HelpCircle size={16} className="flex-shrink-0 mt-0.5" />
+                <HelpCircle size={16} className="shrink-0 mt-0.5" />
                 <p>
                     Produsele returnate trebuie să fie în starea originală, nefolosite și cu toate etichetele atașate.
                     Costurile de transport pentru retur sunt suportate de client.

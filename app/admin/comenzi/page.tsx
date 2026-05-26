@@ -10,33 +10,39 @@ import {
     adminDispatchOrder,
     adminCancelOrder,
     type OrderAdmin,
+    type OrderStatus,
 } from "@/lib/api/admin";
 
-// 0=Pending 1=Confirmed 2=Shipped 3=Delivered 4=Cancelled
-const STATUS_LABEL: Record<number, string> = {
-    0: "În așteptare",
-    1: "Confirmată",
-    2: "Expediată",
-    3: "Livrată",
-    4: "Anulată",
+const STATUS_LABEL: Record<OrderStatus, string> = {
+    Pending:   "În așteptare",
+    Confirmed: "Confirmată",
+    Shipped:   "Expediată",
+    Delivered: "Livrată",
+    Cancelled: "Anulată",
 };
 
-const STATUS_COLOR: Record<number, string> = {
-    0: "bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400",
-    1: "bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400",
-    2: "bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-400",
-    3: "bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400",
-    4: "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
+const STATUS_COLOR: Record<OrderStatus, string> = {
+    Pending:   "bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400",
+    Confirmed: "bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400",
+    Shipped:   "bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-400",
+    Delivered: "bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400",
+    Cancelled: "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
 };
 
-const TABS = [
-    { label: "Toate", value: undefined },
-    { label: "În așteptare", value: 0 },
-    { label: "Confirmate", value: 1 },
-    { label: "Expediate", value: 2 },
-    { label: "Livrate", value: 3 },
-    { label: "Anulate", value: 4 },
-] as const;
+const PREV_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
+    Confirmed: "Pending",
+    Shipped:   "Confirmed",
+    Delivered: "Shipped",
+};
+
+const TABS: { label: string; value: OrderStatus | undefined }[] = [
+    { label: "Toate",        value: undefined    },
+    { label: "În așteptare", value: "Pending"    },
+    { label: "Confirmate",   value: "Confirmed"  },
+    { label: "Expediate",    value: "Shipped"    },
+    { label: "Livrate",      value: "Delivered"  },
+    { label: "Anulate",      value: "Cancelled"  },
+];
 
 function formatDate(iso: string) {
     return new Date(iso).toLocaleString("ro-RO", {
@@ -53,7 +59,7 @@ export default function AdminComenziPage() {
     const { token } = useAuth();
     const [orders, setOrders] = useState<OrderAdmin[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<number | undefined>(undefined);
+    const [activeTab, setActiveTab] = useState<OrderStatus | undefined>(undefined);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [updating, setUpdating] = useState<string | null>(null);
     const [page, setPage] = useState(1);
@@ -61,18 +67,12 @@ export default function AdminComenziPage() {
     const [totalCount, setTotalCount] = useState(0);
     const PAGE_SIZE = 20;
 
-    useEffect(() => {
-        setPage(1);
-    }, [activeTab]);
+    useEffect(() => { setPage(1); }, [activeTab]);
 
     useEffect(() => {
         if (!token) return;
         setLoading(true);
-        adminGetOrders(token, {
-            ...(activeTab !== undefined ? { status: activeTab } : {}),
-            page,
-            pageSize: PAGE_SIZE,
-        })
+        adminGetOrders(token, { status: activeTab, page, pageSize: PAGE_SIZE })
             .then((data) => {
                 setOrders(data.items);
                 setTotalPages(data.totalPages);
@@ -82,7 +82,7 @@ export default function AdminComenziPage() {
             .finally(() => setLoading(false));
     }, [token, activeTab, page]);
 
-    async function handleStatusUpdate(orderId: string, newStatus: number) {
+    async function handleStatusUpdate(orderId: string, newStatus: OrderStatus) {
         if (!token) return;
         setUpdating(orderId);
         try {
@@ -104,7 +104,7 @@ export default function AdminComenziPage() {
         try {
             const { awbNumber, carrierName } = await adminDispatchOrder(token, orderId);
             setOrders((prev) =>
-                prev.map((o) => o.orderId === orderId ? { ...o, status: 2, awbNumber, carrierName } : o)
+                prev.map((o) => o.orderId === orderId ? { ...o, status: "Shipped" as OrderStatus, awbNumber, carrierName } : o)
             );
         } catch (e) {
             console.error(e);
@@ -114,6 +114,15 @@ export default function AdminComenziPage() {
         }
     }
 
+    async function handleStatusBack(orderId: string, currentStatus: OrderStatus) {
+        const targetStatus = PREV_STATUS[currentStatus];
+        if (!targetStatus) return;
+        const currentLabel = STATUS_LABEL[currentStatus];
+        const targetLabel = STATUS_LABEL[targetStatus];
+        if (!window.confirm(`Ești sigur că vrei să reverți comanda din "${currentLabel}" înapoi în "${targetLabel}"?`)) return;
+        await handleStatusUpdate(orderId, targetStatus);
+    }
+
     async function handleCancel(orderId: string) {
         if (!token) return;
         if (!window.confirm("Anulezi această comandă? Stocul va fi refăcut.")) return;
@@ -121,7 +130,7 @@ export default function AdminComenziPage() {
         try {
             await adminCancelOrder(token, orderId);
             setOrders((prev) =>
-                prev.map((o) => o.orderId === orderId ? { ...o, status: 4 } : o)
+                prev.map((o) => o.orderId === orderId ? { ...o, status: "Cancelled" as OrderStatus } : o)
             );
         } catch (e) {
             console.error(e);
@@ -176,13 +185,13 @@ export default function AdminComenziPage() {
                 ) : (
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-gray-100 dark:border-gray-800 text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">
-                                <th className="px-6 py-4 font-semibold">Comandă</th>
-                                <th className="px-6 py-4 font-semibold">Data</th>
-                                <th className="px-6 py-4 font-semibold">Total</th>
-                                <th className="px-6 py-4 font-semibold">Plată</th>
-                                <th className="px-6 py-4 font-semibold">Status</th>
-                                <th className="px-6 py-4 font-semibold text-right">Acțiuni</th>
+                            <tr className="border-b border-gray-100 dark:border-gray-800 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">
+                                <th className="px-6 py-4 font-semibold text-left">Comandă</th>
+                                <th className="px-6 py-4 font-semibold text-center">Data</th>
+                                <th className="px-6 py-4 font-semibold text-center">Total</th>
+                                <th className="px-6 py-4 font-semibold text-center">Plată</th>
+                                <th className="px-6 py-4 font-semibold text-center">Status</th>
+                                <th className="px-6 py-4 font-semibold text-center">Acțiuni</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -200,28 +209,29 @@ export default function AdminComenziPage() {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400 text-xs whitespace-nowrap">
+                                        <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-400 text-xs whitespace-nowrap">
                                             {formatDate(order.createdAt)}
                                         </td>
-                                        <td className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">
+                                        <td className="px-6 py-4 text-center font-semibold text-gray-900 dark:text-gray-100">
                                             {order.totalAmount.toFixed(2)} lei
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 text-center">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${order.isPaid ? "bg-green-50 dark:bg-green-950 text-green-600 dark:text-green-400" : "bg-red-50 dark:bg-red-950 text-red-500 dark:text-red-400"}`}>
                                                 {order.isPaid ? "Plătită" : "Neplătită"}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 text-center">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[order.status]}`}>
                                                 {STATUS_LABEL[order.status]}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                                            <div className="flex items-center justify-end gap-2">
-                                                {order.status === 0 && (
+                                            <div className="flex items-center justify-center gap-2 flex-wrap">
+
+                                                {order.status === "Pending" && (
                                                     <>
                                                         <button
-                                                            onClick={() => handleStatusUpdate(order.orderId, 1)}
+                                                            onClick={() => handleStatusUpdate(order.orderId, "Confirmed")}
                                                             disabled={updating === order.orderId}
                                                             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors disabled:opacity-50"
                                                         >
@@ -236,8 +246,16 @@ export default function AdminComenziPage() {
                                                         </button>
                                                     </>
                                                 )}
-                                                {order.status === 1 && (
+
+                                                {order.status === "Confirmed" && (
                                                     <>
+                                                        <button
+                                                            onClick={() => handleStatusBack(order.orderId, "Confirmed")}
+                                                            disabled={updating === order.orderId}
+                                                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                                                        >
+                                                            ← În așteptare
+                                                        </button>
                                                         <button
                                                             onClick={() => handleDispatch(order.orderId)}
                                                             disabled={updating === order.orderId}
@@ -254,15 +272,36 @@ export default function AdminComenziPage() {
                                                         </button>
                                                     </>
                                                 )}
-                                                {order.status === 2 && (
+
+                                                {order.status === "Shipped" && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleStatusBack(order.orderId, "Shipped")}
+                                                            disabled={updating === order.orderId}
+                                                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                                                        >
+                                                            ← Confirmată
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleStatusUpdate(order.orderId, "Delivered")}
+                                                            disabled={updating === order.orderId}
+                                                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-50 dark:bg-green-950 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900 transition-colors disabled:opacity-50"
+                                                        >
+                                                            Marchează livrată
+                                                        </button>
+                                                    </>
+                                                )}
+
+                                                {order.status === "Delivered" && (
                                                     <button
-                                                        onClick={() => handleStatusUpdate(order.orderId, 3)}
+                                                        onClick={() => handleStatusBack(order.orderId, "Delivered")}
                                                         disabled={updating === order.orderId}
-                                                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-50 dark:bg-green-950 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900 transition-colors disabled:opacity-50"
+                                                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
                                                     >
-                                                        Marchează livrată
+                                                        ← Expediată
                                                     </button>
                                                 )}
+
                                                 <button
                                                     onClick={() => toggleExpand(order.orderId)}
                                                     className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
@@ -281,7 +320,7 @@ export default function AdminComenziPage() {
                                                     <div className="flex flex-col gap-1.5">
                                                         {order.items.map((item) => (
                                                             <div key={item.productVariantId} className="flex items-center gap-3">
-                                                                <div className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                                                                <div className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0">
                                                                     <Package size={13} className="text-gray-400 dark:text-gray-500" />
                                                                 </div>
                                                                 <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">{item.productName}</span>

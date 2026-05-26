@@ -1,6 +1,21 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
-export type OrderStatus = 0 | 1 | 2 | 3 | 4;
+export type OrderStatus = "Pending" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
+
+export const STATUS_ORDER: Record<OrderStatus, number> = {
+    Pending: 0, Confirmed: 1, Shipped: 2, Delivered: 3, Cancelled: 4,
+};
+
+export interface ShippingAddress {
+    fullName: string;
+    phoneNumber: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    region: string;
+    postalCode: string;
+    countryCode: string;
+}
 
 export interface OrderItem {
     orderItemId: string;
@@ -11,6 +26,7 @@ export interface OrderItem {
     productName: string;
     variantSlug: string;
     productSlug: string;
+    isReturnable: boolean;
 }
 
 export interface CompanyOrderSnapshot {
@@ -37,6 +53,7 @@ export interface Order {
     awbNumber?: string;
     carrierName?: string;
     trackingUrl?: string;
+    shippingAddress: ShippingAddress;
     isB2B: boolean;
     netAmount: number;
     vatAmount: number;
