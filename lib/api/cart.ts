@@ -119,12 +119,14 @@ export async function checkout(
     shippingContactId: string,
     cartItemIds: string[],
     isB2B = false,
-    paymentMethod: "Stripe" | "NetPayment" = "Stripe"
+    paymentMethod: "Stripe" | "NetPayment" = "Stripe",
+    couponCode?: string,
+    giftCardCode?: string
 ): Promise<{ orderId: string }> {
     const res = await fetch(`${BASE}/api/cart/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ shippingContactId, cartItemIds, isB2B, paymentMethod }),
+        body: JSON.stringify({ shippingContactId, cartItemIds, isB2B, paymentMethod, couponCode, giftCardCode }),
     });
     if (!res.ok) {
         const json = await res.json().catch(() => null);

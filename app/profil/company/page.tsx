@@ -40,9 +40,9 @@ export default function CompanyProfilePage() {
 
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user) { router.replace("/auth/login"); return; }
+        if (!user || !token) { router.replace("/auth/login"); return; }
 
-        getCompanyProfile(token!)
+        getCompanyProfile(token)
             .then((profile) => {
                 if (profile) {
                     setExists(true);
@@ -72,6 +72,7 @@ export default function CompanyProfilePage() {
 
     async function handleSave(e: React.FormEvent) {
         e.preventDefault();
+        if (!token) return;
         setSaving(true);
         setError(null);
         setSuccess(false);
@@ -89,7 +90,7 @@ export default function CompanyProfilePage() {
                 billingPostalCode: form.billingPostalCode,
                 billingCountryCode: form.billingCountryCode,
             };
-            await upsertCompanyProfile(token!, payload);
+            await upsertCompanyProfile(token, payload);
             setExists(true);
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
@@ -101,11 +102,11 @@ export default function CompanyProfilePage() {
     }
 
     async function handleDelete() {
-        if (!confirm("Ești sigur că vrei să ștergi profilul de companie?")) return;
+        if (!token || !confirm("Ești sigur că vrei să ștergi profilul de companie?")) return;
         setDeleting(true);
         setError(null);
         try {
-            await deleteCompanyProfile(token!);
+            await deleteCompanyProfile(token);
             setExists(false);
             setForm(emptyForm);
         } catch (err: unknown) {
@@ -115,7 +116,7 @@ export default function CompanyProfilePage() {
         }
     }
 
-    if (!isLoaded || !user) return null;
+    if (!isLoaded || !user || !token) return null;
 
     return (
         <div className="flex flex-col gap-8 max-w-2xl">

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 import { CartItem } from "@/types/cart";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
     getCart,
@@ -50,7 +50,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const { user, token, isLoaded } = useAuth();
     const [items, setItems] = useState<CartItem[]>([]);
     const [toastVisible, setToastVisible] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -61,7 +63,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 // Merge guest session cart into user cart, then clear session
                 mergeSessionCart(token, sessionId)
                     .then(setItems)
-                    .catch(() => getCart(token, null).then(setItems).catch(console.error))
+                    .catch(() => {
+                        showError("Nu s-au putut transfera articolele din coș.");
+                        return getCart(token, null).then(setItems).catch(console.error);
+                    })
                     .finally(() => localStorage.removeItem(GUEST_SESSION_KEY));
             } else {
                 getCart(token, null).then(setItems).catch(console.error);
@@ -80,19 +85,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
         toastTimer.current = setTimeout(() => setToastVisible(false), 2500);
     }, []);
 
+    const showError = useCallback((message: string) => {
+        setErrorMessage(message);
+        if (errorTimer.current) clearTimeout(errorTimer.current);
+        errorTimer.current = setTimeout(() => setErrorMessage(null), 3500);
+    }, []);
+
     const addItem = useCallback((payload: AddItemPayload) => {
-        showToast();
+        const onError = (err: unknown) => {
+            console.error(err);
+            showError(err instanceof Error ? err.message : "Nu s-a putut adăuga în coș.");
+        };
         if (user && token) {
             apiAddToCart(token, null, payload.variantId)
-                .then(setItems)
-                .catch(console.error);
+                .then((updated) => { setItems(updated); showToast(); })
+                .catch(onError);
         } else {
             const sessionId = getOrCreateSessionId();
             apiAddToCart(null, sessionId, payload.variantId)
-                .then(setItems)
-                .catch(console.error);
+                .then((updated) => { setItems(updated); showToast(); })
+                .catch(onError);
         }
-    }, [user, token, showToast]);
+    }, [user, token, showToast, showError]);
 
     const removeItem = useCallback((cartItemId: string) => {
         if (user && token) {
@@ -118,12 +132,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     : i
             )
         );
+        const revert = () => {
+            if (user && token) {
+                getCart(token, null).then(setItems).catch(console.error);
+            } else {
+                const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
+                if (sessionId) getCart(null, sessionId).then(setItems).catch(console.error);
+            }
+        };
         if (user && token) {
-            apiUpdateCartItem(token, null, cartItemId, quantity).catch(console.error);
+            apiUpdateCartItem(token, null, cartItemId, quantity).catch(revert);
         } else {
             const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
             if (sessionId) {
-                apiUpdateCartItem(null, sessionId, cartItemId, quantity).catch(console.error);
+                apiUpdateCartItem(null, sessionId, cartItemId, quantity).catch(revert);
             }
         }
     }, [user, token]);
@@ -152,6 +174,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
             >
                 <ShoppingCart size={15} />
                 Adăugat în coș
+            </div>
+
+            <div
+                className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-red-600 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg transition-all duration-300 ${
+                    errorMessage ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none"
+                }`}
+            >
+                <AlertCircle size={15} />
+                {errorMessage}
             </div>
         </CartContext.Provider>
     );

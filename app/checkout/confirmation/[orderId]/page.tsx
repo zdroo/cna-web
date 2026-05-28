@@ -7,14 +7,6 @@ import { CheckCircle, Package, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getOrderById, type Order } from "@/lib/api/orders";
 
-const STATUS_LABEL: Record<number, string> = {
-    0: "În așteptare",
-    1: "Confirmată",
-    2: "Expediată",
-    3: "Livrată",
-    4: "Anulată",
-};
-
 function shortId(id: string) {
     return id.slice(0, 8).toUpperCase();
 }

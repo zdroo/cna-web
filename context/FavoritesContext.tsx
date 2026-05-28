@@ -15,11 +15,13 @@ interface FavoritesContextType {
 
 const FavoritesContext = createContext<FavoritesContextType | null>(null);
 
+const GUEST_SESSION_KEY = "guestSessionId";
+
 function getOrCreateSessionId(): string {
-    let id = localStorage.getItem("sessionId");
+    let id = localStorage.getItem(GUEST_SESSION_KEY);
     if (!id) {
         id = crypto.randomUUID();
-        localStorage.setItem("sessionId", id);
+        localStorage.setItem(GUEST_SESSION_KEY, id);
     }
     return id;
 }
@@ -44,7 +46,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
             try {
                 if (currentToken) {
                     // Drop the anonymous session so logout shows empty favorites
-                    localStorage.removeItem("sessionId");
+                    localStorage.removeItem(GUEST_SESSION_KEY);
                     const data = await getFavorites(currentToken, undefined);
                     applyItems(data);
                 } else {

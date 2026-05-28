@@ -14,7 +14,9 @@ import {
 import { getCompanyProfile, CompanyProfile } from "@/lib/api/companyProfile";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag, ArrowLeft, MapPin, Plus, Building2, CreditCard, FileText } from "lucide-react";
+import { ShoppingBag, ArrowLeft, MapPin, Plus, Building2, CreditCard, FileText, Tag, Gift, Check, X, Loader2 } from "lucide-react";
+import { validateCoupon, CouponValidation } from "@/lib/api/coupons";
+import { validateGiftCard, GiftCardValidation } from "@/lib/api/giftCards";
 
 const emptyForm: AddShippingContactRequest = {
     fullName: "",
@@ -44,12 +46,22 @@ export default function CheckoutPage() {
     const [isB2B, setIsB2B] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<"Stripe" | "NetPayment">("Stripe");
 
+    const [couponInput, setCouponInput] = useState("");
+    const [couponResult, setCouponResult] = useState<CouponValidation | null>(null);
+    const [couponLoading, setCouponLoading] = useState(false);
+    const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+
+    const [giftCardInput, setGiftCardInput] = useState("");
+    const [giftCardResult, setGiftCardResult] = useState<GiftCardValidation | null>(null);
+    const [giftCardLoading, setGiftCardLoading] = useState(false);
+    const [appliedGiftCard, setAppliedGiftCard] = useState<string | null>(null);
+
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user) { router.replace("/auth/login?redirect=/checkout"); return; }
+        if (!user || !token) { router.replace("/auth/login?redirect=/checkout"); return; }
         if (items.length === 0 && !submittedRef.current) { router.replace("/cart"); return; }
 
-        getShippingContacts(token!)
+        getShippingContacts(token)
             .then((list) => {
                 setContacts(list);
                 if (list.length === 0) setShowNewForm(true);
@@ -60,7 +72,7 @@ export default function CheckoutPage() {
                 setShowNewForm(true);
             });
 
-        getCompanyProfile(token!).then(setCompanyProfile).catch(() => {});
+        getCompanyProfile(token).then(setCompanyProfile).catch(() => {});
     }, [isLoaded, user, items.length, token, router]);
 
     if (!isLoaded || !user || items.length === 0) return null;
@@ -71,7 +83,7 @@ export default function CheckoutPage() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (loading) return;
+        if (loading || !token) return;
         setError(null);
 
         let contactId = selectedContactId;
@@ -88,10 +100,11 @@ export default function CheckoutPage() {
             }
         }
 
+        const snapshotAmountDue = amountDue;
         setLoading(true);
         try {
             if (showNewForm || contacts.length === 0) {
-                contactId = await addShippingContact(token!, form);
+                contactId = await addShippingContact(token, form);
             }
 
             if (!contactId) {
@@ -100,11 +113,17 @@ export default function CheckoutPage() {
             }
 
             const cartItemIds = items.map((i) => i.cartItemId);
-            const { orderId } = await checkout(token!, contactId, cartItemIds, isB2B, paymentMethod);
+            const { orderId } = await checkout(
+                token, contactId, cartItemIds, isB2B, paymentMethod,
+                appliedCoupon ?? undefined,
+                appliedGiftCard ?? undefined
+            );
             submittedRef.current = true;
             clearCart();
             if (isB2B && paymentMethod === "NetPayment") {
                 router.push(`/comenzi`);
+            } else if (snapshotAmountDue <= 0) {
+                router.push(`/checkout/confirmation/${orderId}`);
             } else {
                 router.push(`/payment/${orderId}`);
             }
@@ -113,6 +132,50 @@ export default function CheckoutPage() {
         } finally {
             setLoading(false);
         }
+    }
+
+    const discountAmount = couponResult?.isValid ? couponResult.discountAmount : 0;
+    const giftDeduction = giftCardResult?.isValid ? Math.min(giftCardResult.deduction, totalPrice - discountAmount) : 0;
+    const amountDue = Math.max(0, totalPrice - discountAmount - giftDeduction);
+
+    async function applyCoupon() {
+        if (!couponInput.trim()) return;
+        setCouponLoading(true);
+        try {
+            const result = await validateCoupon(couponInput.trim(), totalPrice);
+            setCouponResult(result);
+            if (result.isValid) setAppliedCoupon(couponInput.trim().toUpperCase());
+        } catch {
+            setCouponResult({ isValid: false, errorMessage: "Eroare la validare", discountAmount: 0, discountType: "", discountValue: 0 });
+        } finally {
+            setCouponLoading(false);
+        }
+    }
+
+    function removeCoupon() {
+        setCouponInput("");
+        setCouponResult(null);
+        setAppliedCoupon(null);
+    }
+
+    async function applyGiftCard() {
+        if (!giftCardInput.trim()) return;
+        setGiftCardLoading(true);
+        try {
+            const result = await validateGiftCard(giftCardInput.trim(), totalPrice - discountAmount);
+            setGiftCardResult(result);
+            if (result.isValid) setAppliedGiftCard(giftCardInput.trim().toUpperCase());
+        } catch {
+            setGiftCardResult({ isValid: false, errorMessage: "Eroare la validare", deduction: 0, balance: 0 });
+        } finally {
+            setGiftCardLoading(false);
+        }
+    }
+
+    function removeGiftCard() {
+        setGiftCardInput("");
+        setGiftCardResult(null);
+        setAppliedGiftCard(null);
     }
 
     return (
@@ -278,6 +341,93 @@ export default function CheckoutPage() {
                         </div>
                     )}
 
+                    {/* Coupon */}
+                    <div className="bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800 rounded-xl shadow-sm p-5 flex flex-col gap-3">
+                        <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-sm flex items-center gap-2">
+                            <Tag size={15} className="text-gray-500 dark:text-gray-400" />
+                            Cod promoțional
+                        </h2>
+                        {appliedCoupon ? (
+                            <div className="flex items-center justify-between gap-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2">
+                                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                                    <Check size={14} />
+                                    <span className="font-mono font-semibold">{appliedCoupon}</span>
+                                    <span className="text-green-600 dark:text-green-400">− {discountAmount.toFixed(2)} lei</span>
+                                </div>
+                                <button onClick={removeCoupon} className="text-green-500 hover:text-green-700 dark:hover:text-green-300">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={couponInput}
+                                    onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponResult(null); }}
+                                    onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+                                    placeholder="Introdu codul..."
+                                    className="flex-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={applyCoupon}
+                                    disabled={couponLoading || !couponInput.trim()}
+                                    className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-300 disabled:opacity-50 transition-colors"
+                                >
+                                    {couponLoading ? <Loader2 size={14} className="animate-spin" /> : "Aplică"}
+                                </button>
+                            </div>
+                        )}
+                        {couponResult && !couponResult.isValid && (
+                            <p className="text-xs text-red-500 dark:text-red-400">{couponResult.errorMessage}</p>
+                        )}
+                    </div>
+
+                    {/* Gift Card */}
+                    <div className="bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800 rounded-xl shadow-sm p-5 flex flex-col gap-3">
+                        <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-sm flex items-center gap-2">
+                            <Gift size={15} className="text-gray-500 dark:text-gray-400" />
+                            Card cadou
+                        </h2>
+                        {appliedGiftCard ? (
+                            <div className="flex items-center justify-between gap-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2">
+                                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                                    <Check size={14} />
+                                    <span className="font-mono font-semibold">{appliedGiftCard}</span>
+                                    <span className="text-green-600 dark:text-green-400">− {giftDeduction.toFixed(2)} lei</span>
+                                </div>
+                                <button onClick={removeGiftCard} className="text-green-500 hover:text-green-700 dark:hover:text-green-300">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={giftCardInput}
+                                    onChange={(e) => { setGiftCardInput(e.target.value.toUpperCase()); setGiftCardResult(null); }}
+                                    onKeyDown={(e) => e.key === "Enter" && applyGiftCard()}
+                                    placeholder="Introdu codul cardului..."
+                                    className="flex-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={applyGiftCard}
+                                    disabled={giftCardLoading || !giftCardInput.trim()}
+                                    className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-300 disabled:opacity-50 transition-colors"
+                                >
+                                    {giftCardLoading ? <Loader2 size={14} className="animate-spin" /> : "Aplică"}
+                                </button>
+                            </div>
+                        )}
+                        {giftCardResult && !giftCardResult.isValid && (
+                            <p className="text-xs text-red-500 dark:text-red-400">{giftCardResult.errorMessage}</p>
+                        )}
+                        {giftCardResult?.isValid && (
+                            <p className="text-xs text-gray-400 dark:text-gray-500">Sold rămas după aplicare: {(giftCardResult.balance - giftDeduction).toFixed(2)} lei</p>
+                        )}
+                    </div>
+
                     {error && (
                         <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
                             {error}
@@ -326,6 +476,18 @@ export default function CheckoutPage() {
                             <span>Subtotal</span>
                             <span>{totalPrice.toFixed(2)} lei</span>
                         </div>
+                        {discountAmount > 0 && (
+                            <div className="flex justify-between text-green-600 dark:text-green-400">
+                                <span>Reducere ({appliedCoupon})</span>
+                                <span>− {discountAmount.toFixed(2)} lei</span>
+                            </div>
+                        )}
+                        {giftDeduction > 0 && (
+                            <div className="flex justify-between text-green-600 dark:text-green-400">
+                                <span>Card cadou ({appliedGiftCard})</span>
+                                <span>− {giftDeduction.toFixed(2)} lei</span>
+                            </div>
+                        )}
                         <div className="flex justify-between">
                             <span>Livrare</span>
                             <span className="text-green-600 dark:text-green-400">Gratuită</span>
@@ -333,9 +495,12 @@ export default function CheckoutPage() {
                     </div>
 
                     <div className="flex justify-between font-bold text-gray-900 dark:text-gray-100">
-                        <span>Total</span>
-                        <span>{totalPrice.toFixed(2)} lei</span>
+                        <span>Total de plată</span>
+                        <span>{amountDue.toFixed(2)} lei</span>
                     </div>
+                    {amountDue === 0 && (
+                        <p className="text-xs text-center text-green-600 dark:text-green-400">Comanda este acoperită integral de reduceri</p>
+                    )}
                 </div>
             </div>
         </div>

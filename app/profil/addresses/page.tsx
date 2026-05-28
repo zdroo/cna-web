@@ -45,10 +45,11 @@ export default function AddressesPage() {
 
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isLoaded || !user) return;
-        getShippingContacts(token!)
+        if (!isLoaded || !user || !token) return;
+        getShippingContacts(token)
             .then(setContacts)
             .catch(() => {})
             .finally(() => setLoading(false));
@@ -56,11 +57,12 @@ export default function AddressesPage() {
 
     async function handleAdd(e: React.FormEvent) {
         e.preventDefault();
+        if (!token) return;
         setAddSaving(true);
         setAddError(null);
         try {
-            await addShippingContact(token!, addForm);
-            setContacts(await getShippingContacts(token!));
+            await addShippingContact(token, addForm);
+            setContacts(await getShippingContacts(token));
             setShowAdd(false);
             setAddForm(EMPTY_FORM);
         } catch {
@@ -87,12 +89,12 @@ export default function AddressesPage() {
 
     async function handleEdit(e: React.FormEvent) {
         e.preventDefault();
-        if (!editingId) return;
+        if (!token || !editingId) return;
         setEditSaving(true);
         setEditError(null);
         try {
-            await updateShippingContact(token!, editingId, editForm);
-            setContacts(await getShippingContacts(token!));
+            await updateShippingContact(token, editingId, editForm);
+            setContacts(await getShippingContacts(token));
             setEditingId(null);
         } catch {
             setEditError("Nu s-a putut actualiza adresa. Încearcă din nou.");
@@ -102,31 +104,37 @@ export default function AddressesPage() {
     }
 
     async function handleDelete(id: string) {
+        if (!token) return;
         setDeletingId(id);
+        setActionError(null);
         try {
-            await deleteShippingContact(token!, id);
+            await deleteShippingContact(token, id);
             setContacts((prev) => prev.filter((c) => c.shippingContactId !== id));
         } catch {
+            setActionError("Nu s-a putut șterge adresa. Încearcă din nou.");
         } finally {
             setDeletingId(null);
         }
     }
 
     async function handleSetDefault(id: string) {
+        if (!token) return;
         setSettingDefaultId(id);
+        setActionError(null);
         try {
-            await setDefaultShippingContact(token!, id);
+            await setDefaultShippingContact(token, id);
             setContacts((prev) =>
                 prev.map((c) => ({ ...c, isDefault: c.shippingContactId === id }))
             );
         } catch {
+            setActionError("Nu s-a putut seta adresa implicită. Încearcă din nou.");
         } finally {
             setSettingDefaultId(null);
         }
     }
 
     if (!isLoaded) return null;
-    if (!user) { router.replace("/auth/login"); return null; }
+    if (!user || !token) { router.replace("/auth/login"); return null; }
 
     return (
         <div className="max-w-lg mx-auto flex flex-col gap-6">
@@ -143,6 +151,12 @@ export default function AddressesPage() {
                 </div>
             ) : (
                 <>
+                    {actionError && (
+                        <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
+                            {actionError}
+                        </p>
+                    )}
+
                     {contacts.length === 0 && !showAdd && (
                         <div className="text-center py-12 text-gray-400">
                             <MapPin size={40} className="mx-auto mb-3 opacity-40" />

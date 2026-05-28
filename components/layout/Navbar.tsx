@@ -9,9 +9,10 @@ import FavouritesBadge from "./FavouritesBadge";
 import UserMenu from "./UserMenu";
 
 const NAV_LINKS = [
-    { href: "/produse",    label: "Produse" },
-    { href: "/despre-noi", label: "Despre noi" },
-    { href: "/contact",    label: "Contact" },
+    { href: "/produse",               label: "Produse" },
+    { href: "/carduri-cadou/cumpara", label: "Carduri cadou" },
+    { href: "/despre-noi",            label: "Despre noi" },
+    { href: "/contact",               label: "Contact" },
 ];
 
 export default function Navbar() {

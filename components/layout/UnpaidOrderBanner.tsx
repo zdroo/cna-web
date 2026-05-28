@@ -13,11 +13,11 @@ export default function UnpaidOrderBanner() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (!isLoaded || !user) return;
+        if (!isLoaded || !user || !token || user.role === "Admin" || user.role === "Seller") return;
 
-        getOrders(token!, 1, 50)
+        getOrders(token, 1, 50)
             .then((result) => {
-                const pending = result.items.find((o) => !o.isPaid && o.status !== 4);
+                const pending = result.items.find((o) => !o.isPaid && o.status !== "Cancelled");
                 setUnpaidOrder(pending ?? null);
             })
             .catch(() => {});
@@ -26,9 +26,10 @@ export default function UnpaidOrderBanner() {
     if (!unpaidOrder || dismissed) return null;
 
     async function handlePay() {
+        if (!token || !unpaidOrder) return;
         setLoading(true);
         try {
-            const { url } = await createPaymentSession(token!, unpaidOrder!.orderId);
+            const { url } = await createPaymentSession(token, unpaidOrder.orderId);
             window.location.href = url;
         } catch {
             setLoading(false);

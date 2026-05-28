@@ -3,10 +3,12 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, FolderOpen, Layers, Ruler, ShoppingCart, BarChart2, Users, RotateCcw, ChevronRight, LogOut, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Package, FolderOpen, Layers, Ruler, ShoppingCart, BarChart2, Users, RotateCcw, ChevronRight, LogOut, ArrowLeft, FileText, Tag, Gift, Activity, LucideIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
-const NAV = [
+type NavItem = { href: string; label: string; icon: LucideIcon; exact?: boolean };
+
+const NAV: NavItem[] = [
     { href: "/admin", label: "Panou de control", icon: LayoutDashboard, exact: true },
     { href: "/admin/categorii", label: "Categorii", icon: FolderOpen },
     { href: "/admin/products", label: "Catalog", icon: Package },
@@ -16,6 +18,13 @@ const NAV = [
     { href: "/admin/returns", label: "Retururi", icon: RotateCcw },
     { href: "/admin/statistici", label: "Statistici", icon: BarChart2 },
     { href: "/admin/users", label: "Utilizatori", icon: Users },
+];
+
+const ADMIN_ONLY_NAV: NavItem[] = [
+    { href: "/admin/despre-noi", label: "Despre noi", icon: FileText },
+    { href: "/admin/cupoane", label: "Cupoane", icon: Tag },
+    { href: "/admin/carduri-cadou", label: "Carduri cadou", icon: Gift },
+    { href: "/admin/user-events", label: "Activitate", icon: Activity },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -48,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
 
                     <nav className="p-2 flex flex-col gap-0.5">
-                        {NAV.map(({ href, label, icon: Icon, exact }) => {
+                        {[...NAV, ...(user.role === "Admin" ? ADMIN_ONLY_NAV : [])].map(({ href, label, icon: Icon, exact }) => {
                             const active = exact ? pathname === href : pathname.startsWith(href);
                             return (
                                 <Link

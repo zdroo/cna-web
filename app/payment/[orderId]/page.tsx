@@ -22,10 +22,10 @@ export default function PaymentPage({ params }: { params: Promise<{ orderId: str
 
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user) { router.replace("/auth/login"); return; }
+        if (!user || !token) { router.replace("/auth/login"); return; }
         if (cancelled) return;
 
-        createPaymentSession(token!, orderId)
+        createPaymentSession(token, orderId)
             .then(({ url }) => { window.location.href = url; })
             .catch(() => setError("Nu s-a putut iniția plata. Încearcă din nou."));
     }, [isLoaded, user, token, orderId, cancelled, router]);

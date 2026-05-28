@@ -42,11 +42,12 @@ export default function SettingsPage() {
 
     async function handleProfileSave(e: React.FormEvent) {
         e.preventDefault();
+        if (!token) return;
         setProfileSaving(true);
         setProfileError(null);
         setProfileSuccess(false);
         try {
-            await updateProfile(token!, firstName, lastName);
+            await updateProfile(token, firstName, lastName);
             setProfileSuccess(true);
             setTimeout(() => setProfileSuccess(false), 3000);
         } catch (err: unknown) {
@@ -72,10 +73,11 @@ export default function SettingsPage() {
     }
 
     async function handleDeleteAccount() {
+        if (!token) return;
         setDeleting(true);
         setDeleteError(null);
         try {
-            await deleteAccount(token!);
+            await deleteAccount(token);
             logout();
             router.replace("/");
         } catch (e: unknown) {
@@ -86,7 +88,7 @@ export default function SettingsPage() {
     }
 
     if (!isLoaded) return null;
-    if (!user) { router.replace("/auth/login"); return null; }
+    if (!user || !token) { router.replace("/auth/login"); return null; }
 
     return (
         <div className="max-w-lg mx-auto flex flex-col gap-6">

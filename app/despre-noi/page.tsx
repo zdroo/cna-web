@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getAboutPage } from "@/lib/api/settings";
+import DespreNoiContent from "./DespreNoiContent";
 
 export const metadata: Metadata = {
     title: "Despre noi",
@@ -6,13 +8,7 @@ export const metadata: Metadata = {
     alternates: { canonical: "/despre-noi" },
 };
 
-export default function DespreNoiPage() {
-    return (
-        <div className="max-w-2xl mx-auto py-16 px-4">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">Despre noi</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-lg">
-                Pagină în construcție.
-            </p>
-        </div>
-    );
+export default async function DespreNoiPage() {
+    const initialContent = await getAboutPage();
+    return <DespreNoiContent initialContent={initialContent} />;
 }

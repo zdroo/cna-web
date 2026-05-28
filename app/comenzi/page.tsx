@@ -324,11 +324,12 @@ export default function ComenziPage() {
     const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
 
     const fetchOrders = useCallback(async (p: number) => {
+        if (!token) return;
         setLoading(true);
         try {
             const [data, returns] = await Promise.all([
-                getOrders(token!, p),
-                getUserReturnRequests(token!),
+                getOrders(token, p),
+                getUserReturnRequests(token),
             ]);
             setOrders(data.items);
             setTotalPages(data.totalPages);
@@ -342,15 +343,16 @@ export default function ComenziPage() {
 
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user) { router.replace("/auth/login"); return; }
+        if (!user || !token) { router.replace("/auth/login"); return; }
         fetchOrders(page);
     }, [isLoaded, user, router, fetchOrders, page]);
 
     async function handleCancel(orderId: string) {
+        if (!token) return;
         setCancelling(orderId);
         setError(null);
         try {
-            await cancelOrder(token!, orderId);
+            await cancelOrder(token, orderId);
             await fetchOrders(page);
         } catch {
             setError("Nu s-a putut anula comanda.");
@@ -360,9 +362,10 @@ export default function ComenziPage() {
     }
 
     async function handleDownloadInvoice(orderId: string) {
+        if (!token) return;
         setDownloadingInvoice(orderId);
         try {
-            await downloadInvoice(token!, orderId);
+            await downloadInvoice(token, orderId);
         } catch {
             setError("Nu s-a putut descărca factura.");
         } finally {
@@ -377,7 +380,7 @@ export default function ComenziPage() {
         fetchOrders(page);
     }
 
-    if (!isLoaded || !user) return null;
+    if (!isLoaded || !user || !token) return null;
 
     const isWithin30Days = (order: Order) => {
         const placed = new Date(order.createdAt).getTime();
@@ -627,7 +630,7 @@ export default function ComenziPage() {
             {returnOrder && (
                 <ReturnModal
                     order={returnOrder}
-                    token={token!}
+                    token={token}
                     existingReturns={existingReturns}
                     onClose={() => setReturnOrder(null)}
                     onSuccess={handleReturnSuccess}
