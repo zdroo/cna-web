@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { purchaseGiftCard } from "@/lib/api/giftCards";
 import { Gift, Loader2, ArrowLeft } from "lucide-react";
@@ -24,9 +24,10 @@ export default function CumparaCardCadouPage() {
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const senderNameTouched = useRef(false);
 
     useEffect(() => {
-        if (user) setSenderName(user.email);
+        if (user && !senderNameTouched.current) setSenderName(user.email);
     }, [user]);
 
     const amount = selectedPreset ?? (parseFloat(customAmount) || 0);
@@ -54,6 +55,7 @@ export default function CumparaCardCadouPage() {
             window.location.href = url;
         } catch (err) {
             setError(err instanceof Error ? err.message : "Eroare la inițializarea plății");
+        } finally {
             setLoading(false);
         }
     }
@@ -161,7 +163,7 @@ export default function CumparaCardCadouPage() {
                         <input
                             required
                             value={senderName}
-                            onChange={(e) => setSenderName(e.target.value)}
+                            onChange={(e) => { setSenderName(e.target.value); senderNameTouched.current = true; }}
                             placeholder="ex. Ion Popescu"
                             className={inputCls}
                         />

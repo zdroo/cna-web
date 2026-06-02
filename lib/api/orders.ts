@@ -107,6 +107,8 @@ export async function downloadInvoice(token: string, orderId: string): Promise<v
     const a = document.createElement("a");
     a.href = url;
     a.download = `factura-${orderId.slice(0, 8).toUpperCase()}.pdf`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }

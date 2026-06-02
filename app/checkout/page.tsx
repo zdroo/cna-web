@@ -354,7 +354,7 @@ export default function CheckoutPage() {
                                     <span className="font-mono font-semibold">{appliedCoupon}</span>
                                     <span className="text-green-600 dark:text-green-400">− {discountAmount.toFixed(2)} lei</span>
                                 </div>
-                                <button onClick={removeCoupon} className="text-green-500 hover:text-green-700 dark:hover:text-green-300">
+                                <button type="button" onClick={removeCoupon} className="text-green-500 hover:text-green-700 dark:hover:text-green-300">
                                     <X size={14} />
                                 </button>
                             </div>
@@ -364,7 +364,7 @@ export default function CheckoutPage() {
                                     type="text"
                                     value={couponInput}
                                     onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponResult(null); }}
-                                    onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+                                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCoupon(); } }}
                                     placeholder="Introdu codul..."
                                     className="flex-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600"
                                 />
@@ -396,7 +396,7 @@ export default function CheckoutPage() {
                                     <span className="font-mono font-semibold">{appliedGiftCard}</span>
                                     <span className="text-green-600 dark:text-green-400">− {giftDeduction.toFixed(2)} lei</span>
                                 </div>
-                                <button onClick={removeGiftCard} className="text-green-500 hover:text-green-700 dark:hover:text-green-300">
+                                <button type="button" onClick={removeGiftCard} className="text-green-500 hover:text-green-700 dark:hover:text-green-300">
                                     <X size={14} />
                                 </button>
                             </div>
@@ -406,7 +406,7 @@ export default function CheckoutPage() {
                                     type="text"
                                     value={giftCardInput}
                                     onChange={(e) => { setGiftCardInput(e.target.value.toUpperCase()); setGiftCardResult(null); }}
-                                    onKeyDown={(e) => e.key === "Enter" && applyGiftCard()}
+                                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyGiftCard(); } }}
                                     placeholder="Introdu codul cardului..."
                                     className="flex-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600"
                                 />

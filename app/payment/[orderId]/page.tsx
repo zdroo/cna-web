@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { createPaymentSession } from "@/lib/api/payments";
 import { XCircle } from "lucide-react";
@@ -11,14 +11,9 @@ export default function PaymentPage({ params }: { params: Promise<{ orderId: str
     const { orderId } = use(params);
     const router = useRouter();
     const { user, token, isLoaded } = useAuth();
-    const [cancelled, setCancelled] = useState(false);
+    const searchParams = useSearchParams();
+    const cancelled = searchParams.get("cancelled") === "true";
     const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (typeof window !== "undefined") {
-            setCancelled(new URLSearchParams(window.location.search).get("cancelled") === "true");
-        }
-    }, []);
 
     useEffect(() => {
         if (!isLoaded) return;

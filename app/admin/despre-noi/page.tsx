@@ -27,6 +27,7 @@ export default function AdminDespreNoiPage() {
     useEffect(() => {
         if (!isLoaded) return;
         if (!user || user.role !== "Admin") {
+            setLoading(false);
             router.replace("/admin");
             return;
         }

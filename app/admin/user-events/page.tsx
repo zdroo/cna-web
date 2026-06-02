@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
     getUserEvents, getFunnel,
@@ -69,7 +70,8 @@ function FunnelCard({ funnel }: { funnel: FunnelResult }) {
 }
 
 export default function UserEventsPage() {
-    const { token } = useAuth();
+    const { token, user, isLoaded } = useAuth();
+    const router = useRouter();
     const [events, setEvents] = useState<UserEventDto[]>([]);
     const [totalPages, setTotalPages] = useState(1);
     const [page, setPage] = useState(1);
@@ -81,8 +83,15 @@ export default function UserEventsPage() {
     const [filterUserInput, setFilterUserInput] = useState("");
     const [days, setDays] = useState(30);
 
-    const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-    const to = new Date().toISOString();
+    useEffect(() => {
+        if (!isLoaded) return;
+        if (!user || user.role !== "Admin") router.replace("/admin");
+    }, [isLoaded, user, router]);
+
+    const { from, to } = useMemo(() => ({
+        from: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString(),
+        to: new Date().toISOString(),
+    }), [days]);
 
     const load = useCallback(async (p: number) => {
         if (!token) return;
@@ -108,6 +117,8 @@ export default function UserEventsPage() {
 
     useEffect(() => { setPage(1); }, [filterType, filterUser, days]);
     useEffect(() => { load(page); }, [load, page]);
+
+    if (!isLoaded || !user || user.role !== "Admin") return null;
 
     return (
         <div className="flex flex-col gap-6">

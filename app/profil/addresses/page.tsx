@@ -48,12 +48,13 @@ export default function AddressesPage() {
     const [actionError, setActionError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isLoaded || !user || !token) return;
+        if (!isLoaded) return;
+        if (!user || !token) { router.replace("/auth/login"); return; }
         getShippingContacts(token)
             .then(setContacts)
             .catch(() => {})
             .finally(() => setLoading(false));
-    }, [isLoaded, user, token]);
+    }, [isLoaded, user, token, router]);
 
     async function handleAdd(e: React.FormEvent) {
         e.preventDefault();
@@ -133,8 +134,7 @@ export default function AddressesPage() {
         }
     }
 
-    if (!isLoaded) return null;
-    if (!user || !token) { router.replace("/auth/login"); return null; }
+    if (!isLoaded || !user || !token) return null;
 
     return (
         <div className="max-w-lg mx-auto flex flex-col gap-6">

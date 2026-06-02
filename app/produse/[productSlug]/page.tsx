@@ -31,18 +31,21 @@ export default function ProductVariantsPage({ params }: { params: Promise<{ prod
     const [variants, setVariants] = useState<ProductVariant[]>([]);
     const [categories, setCategories] = useState<CategoryWithProducts[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [sort, setSort] = useState<SortOption>("default");
     const [onlyInStock, setOnlyInStock] = useState(false);
 
     useEffect(() => {
+        setLoadError(false);
         Promise.all([
             getProductVariants(productSlug),
             getCategoriesWithProducts(),
         ]).then(([v, c]) => {
             setVariants(v);
             setCategories(c);
-        }).finally(() => setLoading(false));
+        }).catch(() => setLoadError(true))
+          .finally(() => setLoading(false));
     }, [productSlug]);
 
     const matchingCategory = categories.find((cat) =>
@@ -139,6 +142,10 @@ export default function ProductVariantsPage({ params }: { params: Promise<{ prod
                 {loading ? (
                     <div className="flex justify-center py-24 text-gray-400 dark:text-gray-500">
                         <p>Se încarcă...</p>
+                    </div>
+                ) : loadError ? (
+                    <div className="flex justify-center py-24 text-gray-400 dark:text-gray-500">
+                        <p>Nu s-au putut încărca variantele. Încearcă din nou.</p>
                     </div>
                 ) : displayed.length > 0 ? (
                     <div className="flex flex-wrap gap-6">

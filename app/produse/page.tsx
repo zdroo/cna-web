@@ -534,7 +534,7 @@ function ProduseContent() {
 
     // ── Data fetching ──────────────────────────────────────────────────
     useEffect(() => {
-        getCategoriesWithProducts().then(setCategories);
+        getCategoriesWithProducts().then(setCategories).catch(() => {});
     }, []);
 
     const selectedCategoryId = useMemo(

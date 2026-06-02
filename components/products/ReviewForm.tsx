@@ -41,6 +41,8 @@ export default function ReviewForm({ variantId, existingReviews }: Props) {
         try {
             await addReview(token, variantId, rating, comment.trim());
             setSubmitted(true);
+            setRating(0);
+            setComment("");
             router.refresh();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Eroare la adăugarea recenziei");

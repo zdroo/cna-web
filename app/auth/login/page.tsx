@@ -71,9 +71,17 @@ export default function LoginPage() {
     }
 
     async function handleResend() {
+        if (loading) return;
         setResendDone(false);
-        await resendConfirmationEmail(email);
-        setResendDone(true);
+        setLoading(true);
+        try {
+            await resendConfirmationEmail(email);
+            setResendDone(true);
+        } catch {
+            setError("Nu s-a putut retrimite emailul de confirmare.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     async function handleGoogleSuccess(credentialResponse: CredentialResponse) {

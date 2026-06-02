@@ -23,7 +23,7 @@ function ResetPasswordForm() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (password !== confirm) { setError("Parolele nu coincid."); return; }
-        if (password.length < 6) { setError("Parola trebuie să aibă cel puțin 6 caractere."); return; }
+        if (password.length < 8) { setError("Parola trebuie să aibă cel puțin 8 caractere."); return; }
         setError(null);
         setLoading(true);
         try {

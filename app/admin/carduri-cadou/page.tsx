@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { adminGetGiftCards, adminCreateGiftCard, adminDeleteGiftCard, GiftCardItem } from "@/lib/api/giftCards";
 import { Gift, Plus, Trash2, Loader2, X } from "lucide-react";
@@ -8,7 +9,8 @@ import { Gift, Plus, Trash2, Loader2, X } from "lucide-react";
 const EMPTY = { code: "", value: "", expiresAt: "" };
 
 export default function AdminCarduriCadouPage() {
-    const { token } = useAuth();
+    const { token, user, isLoaded } = useAuth();
+    const router = useRouter();
     const [items, setItems] = useState<GiftCardItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -16,14 +18,22 @@ export default function AdminCarduriCadouPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    useEffect(() => {
+        if (!isLoaded) return;
+        if (!user || user.role !== "Admin") router.replace("/admin");
+    }, [isLoaded, user, router]);
+
     async function load() {
         if (!token) return;
         setLoading(true);
-        try { setItems(await adminGetGiftCards(token)); } catch { }
+        setError(null);
+        try { setItems(await adminGetGiftCards(token)); } catch { setError("Nu s-au putut încărca cardurile cadou."); }
         finally { setLoading(false); }
     }
 
     useEffect(() => { load(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    if (!isLoaded || !user || user.role !== "Admin") return null;
 
     async function handleCreate(e: React.FormEvent) {
         e.preventDefault();
@@ -102,14 +112,16 @@ export default function AdminCarduriCadouPage() {
                         </div>
                     </div>
 
-                    {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
-
                     <button type="submit" disabled={saving}
                         className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-300 disabled:opacity-50 transition-colors self-start">
                         {saving && <Loader2 size={14} className="animate-spin" />}
                         {saving ? "Se salvează..." : "Creează card"}
                     </button>
                 </form>
+            )}
+
+            {error && (
+                <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">{error}</p>
             )}
 
             {/* Table */}

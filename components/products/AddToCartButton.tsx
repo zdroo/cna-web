@@ -29,7 +29,7 @@ export default function AddToCartButton({ variant }: { variant: ProductVariantDe
     return (
         <>
             <button
-                disabled={isOutOfStock}
+                disabled={isOutOfStock || added}
                 onClick={handleAdd}
                 className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >

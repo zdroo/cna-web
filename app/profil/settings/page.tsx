@@ -29,7 +29,8 @@ export default function SettingsPage() {
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isLoaded || !user || !token) return;
+        if (!isLoaded) return;
+        if (!user || !token) { router.replace("/auth/login"); return; }
         getUserProfile(token)
             .then((p) => {
                 setProfile(p);
@@ -38,7 +39,7 @@ export default function SettingsPage() {
             })
             .catch(() => {})
             .finally(() => setLoading(false));
-    }, [isLoaded, user, token]);
+    }, [isLoaded, user, token, router]);
 
     async function handleProfileSave(e: React.FormEvent) {
         e.preventDefault();
@@ -87,8 +88,7 @@ export default function SettingsPage() {
         }
     }
 
-    if (!isLoaded) return null;
-    if (!user || !token) { router.replace("/auth/login"); return null; }
+    if (!isLoaded || !user || !token) return null;
 
     return (
         <div className="max-w-lg mx-auto flex flex-col gap-6">

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Star, ChevronRight, Package } from "lucide-react";
 import { getVariantDetail } from "@/lib/api/products";
@@ -42,7 +43,8 @@ export async function generateMetadata({ params }: VariantDetailPageProps): Prom
 
 export default async function VariantDetailPage({ params }: VariantDetailPageProps) {
     const { productSlug, variantSlug } = await params;
-    const variant = await getVariantDetail(productSlug, variantSlug);
+    const variant = await getVariantDetail(productSlug, variantSlug).catch(() => null);
+    if (!variant) return notFound();
 
     const isOutOfStock = variant.stockQuantity === 0;
     const attributeEntries = Object.entries(variant.attributes ?? {});

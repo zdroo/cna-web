@@ -26,7 +26,7 @@ export default function HeroSection() {
             Cumpără Acum
           </Link>
           <Link
-            href="/categories"
+            href="/produse"
             className="border border-white text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-white hover:text-gray-900 transition-colors"
           >
             Vezi Categorii

@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ZoomIn, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 export default function ImageGallery({ imageUrls, name }: { imageUrls: string[], name: string | null }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+    useEffect(() => { setCurrentIndex(0); }, [imageUrls]);
 
     const hasMultipleImages = imageUrls.length > 1;
 

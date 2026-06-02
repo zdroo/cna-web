@@ -64,6 +64,7 @@ export default function AdminReturnsPage() {
         setActiveTab(val);
         setPage(1);
         setExpandedId(null);
+        setConfirmReceived(null);
     }
 
     async function handleUpdateStatus(id: string, status: ReturnStatus) {
@@ -310,7 +311,7 @@ export default function AdminReturnsPage() {
                 <div className="flex items-center justify-center gap-2">
                     <button
                         disabled={page === 1}
-                        onClick={() => setPage((p) => p - 1)}
+                        onClick={() => { setPage((p) => p - 1); setConfirmReceived(null); }}
                         className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                         Anterior
@@ -318,7 +319,7 @@ export default function AdminReturnsPage() {
                     <span className="text-sm text-gray-500">{page} / {totalPages}</span>
                     <button
                         disabled={page === totalPages}
-                        onClick={() => setPage((p) => p + 1)}
+                        onClick={() => { setPage((p) => p + 1); setConfirmReceived(null); }}
                         className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                         Următor

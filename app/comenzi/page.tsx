@@ -345,7 +345,7 @@ export default function ComenziPage() {
         if (!isLoaded) return;
         if (!user || !token) { router.replace("/auth/login"); return; }
         fetchOrders(page);
-    }, [isLoaded, user, router, fetchOrders, page]);
+    }, [isLoaded, user, token, router, fetchOrders, page]);
 
     async function handleCancel(orderId: string) {
         if (!token) return;
@@ -375,6 +375,7 @@ export default function ComenziPage() {
 
     function handleReturnSuccess() {
         setReturnOrder(null);
+        setError(null);
         setReturnSuccess("Cererea de retur a fost trimisă cu succes!");
         setTimeout(() => setReturnSuccess(null), 5000);
         fetchOrders(page);

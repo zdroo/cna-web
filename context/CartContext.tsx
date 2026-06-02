@@ -151,13 +151,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [user, token]);
 
     const clearCart = useCallback(() => {
-        setItems([]);
-        if (user && token) {
-            clearCartApi(token, null).catch(console.error);
-        } else {
-            const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
-            if (sessionId) clearCartApi(null, sessionId).catch(console.error);
-        }
+        setItems((prev) => {
+            const previous = prev;
+            const revert = () => setItems(previous);
+            if (user && token) {
+                clearCartApi(token, null).catch(() => { console.error("clearCart failed"); revert(); });
+            } else {
+                const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
+                if (sessionId) clearCartApi(null, sessionId).catch(() => { console.error("clearCart failed"); revert(); });
+            }
+            return [];
+        });
     }, [user, token]);
 
     const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
