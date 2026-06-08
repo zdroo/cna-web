@@ -22,6 +22,7 @@ interface Product {
     minPrice: number;
     maxPrice: number;
     isActive?: boolean;
+    sellerId?: string;
 }
 
 const SAMPLE_CSV = `name,slug,description,categorySlug
@@ -36,8 +37,10 @@ function downloadSampleCsv() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "produse-exemplu.csv";
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 function parseCsv(text: string): ProductImportRow[] {
@@ -58,9 +61,11 @@ function parseCsv(text: string): ProductImportRow[] {
 }
 
 export default function AdminProductsPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const isSeller = user?.role === "Seller";
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -74,8 +79,10 @@ export default function AdminProductsPage() {
     useEffect(() => {
         if (!token) return;
         adminGetProducts(token)
-            .then(setProducts)
-            .catch(console.error)
+            .then((all: Product[]) => {
+                setProducts(isSeller ? all.filter(p => p.sellerId === user?.userId) : all);
+            })
+            .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
     }, [token]);
 
@@ -149,8 +156,8 @@ export default function AdminProductsPage() {
             const result = await adminImportProducts(token, importRows);
             setImportResult(result);
             if (result.created > 0) {
-                const fresh = await adminGetProducts(token);
-                setProducts(fresh);
+                const fresh: Product[] = await adminGetProducts(token);
+                setProducts(isSeller ? fresh.filter(p => p.sellerId === user?.userId) : fresh);
             }
             setImportRows(null);
         } catch (e) {
@@ -307,7 +314,7 @@ export default function AdminProductsPage() {
                             <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
                                 {importResult.errors.map((err, i) => (
                                     <div key={i} className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400">
-                                        <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+                                        <AlertCircle size={14} className="mt-0.5 shrink-0" />
                                         <span>Rândul {err.row}: {err.message}</span>
                                     </div>
                                 ))}
@@ -337,6 +344,8 @@ export default function AdminProductsPage() {
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 {loading ? (
                     <PageSpinner className="py-16" />
+                ) : loadError ? (
+                    <div className="py-16 text-center text-red-500 dark:text-red-400 text-sm">Nu s-au putut încărca produsele.</div>
                 ) : products.length === 0 ? (
                     <div className="py-16 text-center text-gray-400 dark:text-gray-500">Niciun produs găsit.</div>
                 ) : (

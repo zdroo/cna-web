@@ -384,37 +384,43 @@ export default function AdminStatisticiPage() {
     const [granularity, setGranularity] = useState<RevenueGranularity>("Day");
     const [revenueData, setRevenueData]   = useState<RevenuePoint[]>([]);
     const [revenueLoading, setRevenueLoading] = useState(true);
+    const [revenueError, setRevenueError] = useState(false);
 
     const [topDays, setTopDays]   = useState(0);
     const [topData, setTopData]   = useState<TopVariantPoint[]>([]);
     const [topLoading, setTopLoading] = useState(true);
+    const [topError, setTopError] = useState(false);
 
     const [heatMonths, setHeatMonths] = useState(12);
     const [heatTop, setHeatTop]       = useState(5);
     const [heatData, setHeatData]     = useState<MonthlyProductSales | null>(null);
     const [heatLoading, setHeatLoading] = useState(true);
+    const [heatError, setHeatError] = useState(false);
 
     useEffect(() => {
         if (!token) return;
         setRevenueLoading(true);
+        setRevenueError(false);
         adminGetRevenueStats(token, granularity)
-            .then(setRevenueData).catch(console.error)
+            .then(setRevenueData).catch(() => setRevenueError(true))
             .finally(() => setRevenueLoading(false));
     }, [token, granularity]);
 
     useEffect(() => {
         if (!token) return;
         setTopLoading(true);
+        setTopError(false);
         adminGetTopSellingVariants(token, 10, topDays)
-            .then(setTopData).catch(console.error)
+            .then(setTopData).catch(() => setTopError(true))
             .finally(() => setTopLoading(false));
     }, [token, topDays]);
 
     useEffect(() => {
         if (!token) return;
         setHeatLoading(true);
+        setHeatError(false);
         adminGetMonthlyProductSales(token, heatMonths, heatTop)
-            .then(setHeatData).catch(console.error)
+            .then(setHeatData).catch(() => setHeatError(true))
             .finally(() => setHeatLoading(false));
     }, [token, heatMonths, heatTop]);
 
@@ -471,6 +477,8 @@ export default function AdminStatisticiPage() {
                 <div className="text-gray-900 dark:text-gray-100">
                     {revenueLoading ? (
                         <Placeholder />
+                    ) : revenueError ? (
+                        <div className="h-40 flex items-center justify-center text-red-500 dark:text-red-400 text-sm">Nu s-au putut încărca datele.</div>
                     ) : revenueData.every(d => d.revenue === 0) ? (
                         <Empty />
                     ) : (
@@ -492,7 +500,11 @@ export default function AdminStatisticiPage() {
                         onChange={setTopDays}
                     />
                 </div>
-                <TopProductsTable data={topData} loading={topLoading} />
+                {topError ? (
+                    <div className="h-40 flex items-center justify-center text-red-500 dark:text-red-400 text-sm">Nu s-au putut încărca datele.</div>
+                ) : (
+                    <TopProductsTable data={topData} loading={topLoading} />
+                )}
             </div>
 
             {/* Monthly product heatmap */}
@@ -527,7 +539,11 @@ export default function AdminStatisticiPage() {
                         </div>
                     </div>
                 </div>
-                <MonthlyHeatmap data={heatData} loading={heatLoading} />
+                {heatError ? (
+                    <div className="h-40 flex items-center justify-center text-red-500 dark:text-red-400 text-sm">Nu s-au putut încărca datele.</div>
+                ) : (
+                    <MonthlyHeatmap data={heatData} loading={heatLoading} />
+                )}
             </div>
         </div>
     );

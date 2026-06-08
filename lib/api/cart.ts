@@ -108,10 +108,11 @@ export async function removeCartItem(
 }
 
 export async function clearCartApi(token?: string | null, sessionId?: string | null): Promise<void> {
-    await fetch(buildUrl("/api/cart", sessionId), {
+    const res = await fetch(buildUrl("/api/cart", sessionId), {
         method: "DELETE",
         headers: buildHeaders(token, sessionId),
     });
+    if (!res.ok) throw new Error("Eroare la golirea coșului");
 }
 
 export async function checkout(

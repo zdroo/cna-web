@@ -41,7 +41,7 @@ const websiteJsonLd = {
 };
 
 export default async function HomePage() {
-    const categories = await getCategoriesWithProducts();
+    const categories = await getCategoriesWithProducts().catch(() => []);
 
     return (
         <>

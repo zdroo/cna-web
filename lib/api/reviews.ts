@@ -33,3 +33,40 @@ export async function addReview(
         throw new Error(err?.message ?? "Eroare la adăugarea recenziei");
     }
 }
+
+export async function updateReview(
+    token: string,
+    reviewId: string,
+    rating: number,
+    comment: string,
+): Promise<void> {
+    const res = await fetch(`${BASE}/api/reviews/${reviewId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating, comment }),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.message ?? "Eroare la actualizarea recenziei");
+    }
+}
+
+export async function deleteReview(token: string, reviewId: string): Promise<void> {
+    const res = await fetch(`${BASE}/api/reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Eroare la ștergerea recenziei");
+}
+
+export async function subscribeToStockNotification(variantId: string, email: string): Promise<void> {
+    const res = await fetch(`${BASE}/api/variants/${variantId}/notify-me`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.message ?? "Eroare la înregistrarea notificării");
+    }
+}

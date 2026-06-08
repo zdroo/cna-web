@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { Star, ShoppingCart } from "lucide-react";
 import { ProductVariant } from "@/types/product";
 import FavoriteButton from "./FavoriteButton";
@@ -11,6 +12,7 @@ const MAX_VISIBLE_ATTRS = 2;
 
 export default function VariantCard({ variant, productSlug }: { variant: ProductVariant, productSlug: string }) {
     const { addItem } = useCart();
+    const [adding, setAdding] = useState(false);
     const isOutOfStock = variant.stockQuantity === 0;
     const attributeEntries = Object.entries(variant.attributes ?? {});
     const visibleAttrs = attributeEntries.slice(0, MAX_VISIBLE_ATTRS);
@@ -103,17 +105,25 @@ export default function VariantCard({ variant, productSlug }: { variant: Product
                         <FavoriteButton variantId={variant.variantId} />
                         <div className="relative group/cart">
                             <button
-                                disabled={isOutOfStock}
-                                onClick={() => addItem({
-                                    variantId: variant.variantId,
-                                    variantSlug: variant.variantSlug,
-                                    productSlug: variant.productSlug,
-                                    name: variant.name,
-                                    brand: variant.brand,
-                                    price: variant.price,
-                                    primaryImageUrl: variant.primaryImageUrl,
-                                    stockQuantity: variant.stockQuantity,
-                                })}
+                                disabled={isOutOfStock || adding}
+                                onClick={async () => {
+                                    if (adding || isOutOfStock) return;
+                                    setAdding(true);
+                                    try {
+                                        await addItem({
+                                            variantId: variant.variantId,
+                                            variantSlug: variant.variantSlug,
+                                            productSlug: variant.productSlug,
+                                            name: variant.name,
+                                            brand: variant.brand,
+                                            price: variant.price,
+                                            primaryImageUrl: variant.primaryImageUrl,
+                                            stockQuantity: variant.stockQuantity,
+                                        });
+                                    } finally {
+                                        setAdding(false);
+                                    }
+                                }}
                                 className="flex items-center justify-center w-9 h-9 bg-gray-800 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-600 dark:hover:bg-gray-600 transition-colors disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
                             >
                                 <ShoppingCart size={16} />

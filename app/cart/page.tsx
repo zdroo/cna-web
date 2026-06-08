@@ -54,7 +54,7 @@ export default function CartPage() {
                     <span className="text-gray-400 text-sm mt-1">({totalItems} produse)</span>
                 </div>
                 <button
-                    onClick={clearCart}
+                    onClick={() => { if (window.confirm("Golești tot coșul?")) clearCart(); }}
                     className="text-sm text-gray-400 hover:text-red-500 transition-colors"
                 >
                     Golește coșul

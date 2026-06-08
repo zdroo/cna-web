@@ -544,6 +544,7 @@ export default function HomeContent({ categories }: Props) {
                     setTotalCount(data.totalCount);
                 }
             })
+            .catch(() => {})
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [selectedCategoryId, selectedProductId, selectedProductSlug, onlyInStock, onlyDiscounted, sortBy, minPrice, maxPrice, page]);

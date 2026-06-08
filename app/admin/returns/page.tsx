@@ -10,7 +10,8 @@ import {
     RETURN_STATUS_LABEL,
     RETURN_STATUS_STYLE,
 } from "@/lib/api/returns";
-import { ChevronDown, ChevronUp, Loader2, RotateCcw } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, RotateCcw, Truck } from "lucide-react";
+import { RETURN_REASON_LABEL, type ReturnReasonCode } from "@/lib/api/returns";
 import PageSpinner from "@/components/ui/PageSpinner";
 
 const TABS: { label: string; value: ReturnStatus | undefined }[] = [
@@ -45,6 +46,8 @@ export default function AdminReturnsPage() {
     const [activeTab, setActiveTab] = useState<ReturnStatus | undefined>(undefined);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [notes, setNotes] = useState<Record<string, string>>({});
+    const [rmaAwb, setRmaAwb] = useState<Record<string, string>>({});
+    const [rmaCarrier, setRmaCarrier] = useState<Record<string, string>>({});
     const [updating, setUpdating] = useState<string | null>(null);
     const [confirmReceived, setConfirmReceived] = useState<string | null>(null);
 
@@ -71,11 +74,14 @@ export default function AdminReturnsPage() {
         if (!token) return;
         setUpdating(id);
         try {
-            await updateReturnStatus(token, id, status, notes[id]);
+            const awb = rmaAwb[id]?.trim();
+            const carrier = rmaCarrier[id]?.trim();
+            const rma = awb && carrier ? { awb, carrierName: carrier } : undefined;
+            await updateReturnStatus(token, id, status, notes[id], rma);
             setItems((prev) =>
                 prev.map((r) =>
                     r.returnRequestId === id
-                        ? { ...r, status, adminNotes: notes[id] ?? r.adminNotes }
+                        ? { ...r, status, adminNotes: notes[id] ?? r.adminNotes, returnAwb: awb ?? r.returnAwb, returnCarrierName: carrier ?? r.returnCarrierName }
                         : r
                 )
             );
@@ -192,8 +198,19 @@ export default function AdminReturnsPage() {
                                         {/* Reason */}
                                         <div>
                                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Motiv</p>
-                                            <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">{r.reason}</p>
+                                            <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+                                                {r.reasonCode ? RETURN_REASON_LABEL[r.reasonCode as ReturnReasonCode] : r.reason}
+                                            </p>
                                         </div>
+
+                                        {/* RMA tracking info */}
+                                        {r.returnAwb && (
+                                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                                <Truck size={13} />
+                                                <span>AWB retur: <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">{r.returnAwb}</span></span>
+                                                {r.returnCarrierName && <span>({r.returnCarrierName})</span>}
+                                            </div>
+                                        )}
 
                                         {/* Existing admin notes */}
                                         {r.adminNotes && (
@@ -212,6 +229,28 @@ export default function AdminReturnsPage() {
                                         {/* Actions */}
                                         {isActionable && (
                                             <div className="flex flex-col gap-3 pt-1 border-t border-gray-100 dark:border-gray-800">
+                                                {r.status === "Pending" && (
+                                                    <div className="flex gap-2 flex-wrap">
+                                                        <div className="flex flex-col gap-1 flex-1 min-w-35">
+                                                            <label className="text-xs text-gray-400">AWB retur (opțional)</label>
+                                                            <input
+                                                                value={rmaAwb[r.returnRequestId] ?? ""}
+                                                                onChange={(e) => setRmaAwb((p) => ({ ...p, [r.returnRequestId]: e.target.value }))}
+                                                                placeholder="AWB curier..."
+                                                                className="px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                                                            />
+                                                        </div>
+                                                        <div className="flex flex-col gap-1 flex-1 min-w-35">
+                                                            <label className="text-xs text-gray-400">Transportator</label>
+                                                            <input
+                                                                value={rmaCarrier[r.returnRequestId] ?? ""}
+                                                                onChange={(e) => setRmaCarrier((p) => ({ ...p, [r.returnRequestId]: e.target.value }))}
+                                                                placeholder="Fan Courier..."
+                                                                className="px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 <textarea
                                                     rows={2}
                                                     placeholder="Note opționale pentru client..."

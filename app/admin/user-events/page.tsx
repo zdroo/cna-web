@@ -76,6 +76,7 @@ export default function UserEventsPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [funnel, setFunnel] = useState<FunnelResult | null>(null);
 
     const [filterType, setFilterType] = useState<UserEventType | "">("");
@@ -110,6 +111,7 @@ export default function UserEventsPage() {
             setTotalPages(eventsResult.totalPages);
             setFunnel(funnelResult);
         } catch {
+            setLoadError(true);
         } finally {
             setLoading(false);
         }
@@ -187,6 +189,8 @@ export default function UserEventsPage() {
                     <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                         {loading ? (
                             <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">Se încarcă...</td></tr>
+                        ) : loadError ? (
+                            <tr><td colSpan={4} className="px-4 py-8 text-center text-red-500 dark:text-red-400">Eroare la încărcarea evenimentelor.</td></tr>
                         ) : events.length === 0 ? (
                             <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">Niciun eveniment găsit.</td></tr>
                         ) : events.map((e) => (

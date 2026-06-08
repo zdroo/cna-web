@@ -54,8 +54,10 @@ function downloadSampleCsv() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "categorii-exemplu.csv";
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 function parseCsv(text: string): CategoryImportRow[] {
@@ -101,7 +103,7 @@ export default function AdminCategoriiPage() {
         if (!token) return;
         adminGetCategories(token)
             .then(setCategories)
-            .catch(console.error)
+            .catch(() => setError("Nu s-au putut încărca categoriile."))
             .finally(() => setLoading(false));
     }, [token]);
 
@@ -307,6 +309,10 @@ export default function AdminCategoriiPage() {
                     </div>
                 )}
             </div>
+
+            {!showForm && error && (
+                <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">{error}</p>
+            )}
 
             {/* Create / Edit form */}
             {showForm && (

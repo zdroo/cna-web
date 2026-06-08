@@ -33,7 +33,7 @@ export default function AdminNewProductPage() {
                 setCategories(cats);
                 if (cats.length > 0) setForm((f) => ({ ...f, categoryId: cats[0].categoryId }));
             })
-            .catch(console.error);
+            .catch(() => setError("Nu s-au putut încărca categoriile."));
     }, [token]);
 
     function setField<K extends keyof FormState>(key: K, value: FormState[K]) {

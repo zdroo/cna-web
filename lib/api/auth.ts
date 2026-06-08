@@ -108,3 +108,11 @@ export async function resetPassword(token: string, newPassword: string): Promise
         throw new Error(error?.message ?? "Token invalid sau expirat.");
     }
 }
+
+export async function logout(refreshToken: string): Promise<void> {
+    await fetch(`${BASE}/api/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+    }).catch(() => {});
+}

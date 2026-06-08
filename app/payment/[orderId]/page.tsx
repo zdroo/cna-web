@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { createPaymentSession } from "@/lib/api/payments";
 import { XCircle } from "lucide-react";
 import Link from "next/link";
 
-export default function PaymentPage({ params }: { params: Promise<{ orderId: string }> }) {
-    const { orderId } = use(params);
+function PaymentPageContent({ orderId }: { orderId: string }) {
     const router = useRouter();
     const { user, token, isLoaded } = useAuth();
     const searchParams = useSearchParams();
@@ -76,4 +75,9 @@ export default function PaymentPage({ params }: { params: Promise<{ orderId: str
             <p className="text-sm">Se încarcă pagina de plată...</p>
         </div>
     );
+}
+
+export default function PaymentPage({ params }: { params: Promise<{ orderId: string }> }) {
+    const { orderId } = use(params);
+    return <Suspense fallback={null}><PaymentPageContent orderId={orderId} /></Suspense>;
 }

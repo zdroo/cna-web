@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { AuthUser } from "@/types/auth";
-import { login as apiLogin, register as apiRegister, googleLogin as apiGoogleLogin, refreshToken as apiRefresh } from "@/lib/api/auth";
+import { login as apiLogin, register as apiRegister, googleLogin as apiGoogleLogin, refreshToken as apiRefresh, logout as apiLogout } from "@/lib/api/auth";
 
 interface AuthContextType {
     user: AuthUser | null;
@@ -134,6 +134,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const logout = useCallback(() => {
+        const storedRefresh = localStorage.getItem("refreshToken");
+        if (storedRefresh) apiLogout(storedRefresh);
         clearAuth();
         router.push("/");
     }, [router]); // eslint-disable-line react-hooks/exhaustive-deps

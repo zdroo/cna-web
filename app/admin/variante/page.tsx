@@ -21,16 +21,20 @@ import {
 
 interface Variant {
     variantId: string;
+    productId: string;
     sku: string;
     name: string;
     price: number;
     discountedPrice: number | null;
     stockQuantity: number;
     isActive: boolean;
+    brand: string | null;
+    description: string | null;
     productName: string;
     productSlug: string;
     variantSlug: string;
     imageUrls: string[];
+    attributes?: Record<string, string>;
 }
 
 interface Product {
@@ -267,6 +271,7 @@ function UnitCombobox({
     const [inputValue, setInputValue] = useState(selectedUnit?.symbol ?? "");
     const [open, setOpen] = useState(false);
     const [adding, setAdding] = useState(false);
+    const [addError, setAddError] = useState<string | null>(null);
     const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -321,10 +326,13 @@ function UnitCombobox({
     async function handleAdd() {
         if (!inputValue.trim() || adding) return;
         setAdding(true);
+        setAddError(null);
         try {
             const newId = await onAdd(inputValue.trim());
             onChange(newId);
             setOpen(false);
+        } catch {
+            setAddError("Nu s-a putut adăuga unitatea.");
         } finally {
             setAdding(false);
         }
@@ -376,6 +384,9 @@ function UnitCombobox({
                     className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden"
                 >
                     <div className="max-h-56 overflow-y-auto">
+                        {addError && (
+                            <p className="px-3 py-2 text-xs text-red-500 dark:text-red-400 border-b border-gray-100 dark:border-gray-800">{addError}</p>
+                        )}
                         {showAdd && (
                             <button
                                 type="button"
@@ -460,7 +471,7 @@ export default function AdminVariantePage() {
                 setProducts(p as Product[]);
                 setUnits(u as MeasurementUnit[]);
             })
-            .catch(console.error)
+            .catch(() => setError("Nu s-au putut încărca variantele."))
             .finally(() => setLoading(false));
     }, [token]);
 
@@ -472,18 +483,17 @@ export default function AdminVariantePage() {
     }
 
     function openEdit(variant: Variant) {
-        const product = products.find((p) => p.name === variant.productName);
         setEditingId(variant.variantId);
         setForm({
-            productId: product?.productId ?? "",
+            productId: variant.productId,
             sku: variant.sku,
             name: variant.name ?? "",
             price: String(variant.price),
             discountedPrice: variant.discountedPrice != null ? String(variant.discountedPrice) : "",
             quantity: String(variant.stockQuantity),
-            brand: "",
-            description: "",
-            attributes: [],
+            brand: variant.brand ?? "",
+            description: variant.description ?? "",
+            attributes: Object.entries(variant.attributes ?? {}).map(([name, value]) => ({ name, value, unitId: undefined })),
             imageUrls: variant.imageUrls ?? [],
             isActive: variant.isActive,
         });
@@ -554,6 +564,8 @@ export default function AdminVariantePage() {
                     name: form.name,
                     price,
                     quantity,
+                    brand: form.brand,
+                    description: form.description,
                     variantAttributes: form.attributes,
                     imageUrls: form.imageUrls.filter(Boolean),
                     isActive: form.isActive,

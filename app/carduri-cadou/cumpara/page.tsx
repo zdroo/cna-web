@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { purchaseGiftCard } from "@/lib/api/giftCards";
 import { Gift, Loader2, ArrowLeft } from "lucide-react";
@@ -11,7 +11,7 @@ const PRESETS = [50, 100, 150, 200, 300, 500];
 
 const inputCls = "border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 w-full";
 
-export default function CumparaCardCadouPage() {
+function CumparaCardCadouContent() {
     const { user } = useAuth();
     const searchParams = useSearchParams();
     const cancelled = searchParams.get("cancelled") === "true";
@@ -207,4 +207,8 @@ export default function CumparaCardCadouPage() {
             </form>
         </div>
     );
+}
+
+export default function CumparaCardCadouPage() {
+    return <Suspense fallback={null}><CumparaCardCadouContent /></Suspense>;
 }

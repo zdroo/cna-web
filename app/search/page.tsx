@@ -20,8 +20,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const query = q?.trim() ?? "";
 
     const [categories, variantsResult] = await Promise.all([
-        getCategoriesWithProducts(),
-        getVariantsFiltered({ searchText: query || undefined, onlyActive: true, pageSize: 48 }),
+        getCategoriesWithProducts().catch(() => []),
+        getVariantsFiltered({ searchText: query || undefined, onlyActive: true, pageSize: 48 }).catch(() => ({ items: [], totalCount: 0, page: 1, pageSize: 48, totalPages: 0 })),
     ]);
 
     const variants = variantsResult.items;

@@ -61,7 +61,7 @@ export default function CompanyProfilePage() {
                     });
                 }
             })
-            .catch(() => {})
+            .catch(() => setError("Nu s-a putut încărca profilul. Reîncarcă pagina."))
             .finally(() => setLoading(false));
     }, [isLoaded, user, token, router]);
 

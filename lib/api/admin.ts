@@ -6,6 +6,7 @@ function authHeaders(token: string) {
 
 // ── Orders ──────────────────────────────────────────────────
 export interface OrderItemAdmin {
+    orderItemId: string;
     productVariantId: string;
     quantity: number;
     price: number;
@@ -13,6 +14,10 @@ export interface OrderItemAdmin {
     productName: string;
     variantSlug: string;
     productSlug: string;
+    isReturnable: boolean;
+    dispatchedAt: string | null;
+    itemAwbNumber: string | null;
+    itemCarrierName: string | null;
 }
 
 export type OrderStatus = "Pending" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
@@ -23,10 +28,18 @@ export interface OrderAdmin {
     status: OrderStatus;
     items: OrderItemAdmin[];
     isPaid: boolean;
+    isB2B: boolean;
+    paymentMethod: string;
+    dueDate?: string;
     createdAt: string;
     awbNumber?: string;
     carrierName?: string;
     trackingUrl?: string;
+    couponCode?: string;
+    discountAmount: number;
+    giftCardCode?: string;
+    giftCardDeduction: number;
+    amountDue: number;
 }
 
 export type RevenueGranularity = "Hour" | "Day" | "Week" | "Month" | "Year";
@@ -221,6 +234,7 @@ export async function adminCreateProduct(token: string, data: {
 export async function adminUpdateProduct(token: string, productId: string, data: {
     name: string; description: string; brand: string; categoryId: string;
     isActive: boolean; isShippable: boolean; isDigital: boolean; isReturnable: boolean;
+    publishAt?: string | null; unpublishAt?: string | null;
 }) {
     const res = await fetch(`${BASE}/api/products/${productId}`, {
         method: "PUT", headers: authHeaders(token), body: JSON.stringify(data),
@@ -343,6 +357,7 @@ export async function adminCreateVariant(token: string, data: {
 
 export async function adminUpdateVariant(token: string, variantId: string, data: {
     productId: string; sku: string; name: string; price: number; quantity: number;
+    brand?: string; description?: string;
     variantAttributes: VariantAttribute[]; imageUrls: string[]; isActive: boolean;
     discountedPrice?: number | null;
 }) {
@@ -365,4 +380,65 @@ export async function adminDeleteVariantsBatch(token: string, variantIds: string
         body: JSON.stringify({ variantIds }),
     });
     if (!res.ok) throw new Error("Batch delete failed");
+}
+
+// ── B2B / Order Notes / KPIs / Partial Dispatch ──────────────────────────────
+
+export async function adminMarkB2BPaid(token: string, orderId: string): Promise<void> {
+    const res = await fetch(`${BASE}/api/order/admin/${orderId}/b2b-paid`, {
+        method: "PUT", headers: authHeaders(token),
+    });
+    if (!res.ok) throw new Error("Failed to mark B2B order as paid");
+}
+
+export interface OrderNote {
+    id: string;
+    adminId: string;
+    text: string;
+    createdAt: string;
+}
+
+export async function adminGetOrderNotes(token: string, orderId: string): Promise<OrderNote[]> {
+    const res = await fetch(`${BASE}/api/order/admin/${orderId}/notes`, {
+        headers: authHeaders(token), cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to fetch order notes");
+    return res.json();
+}
+
+export async function adminAddOrderNote(token: string, orderId: string, text: string): Promise<void> {
+    const res = await fetch(`${BASE}/api/order/admin/${orderId}/notes`, {
+        method: "POST", headers: authHeaders(token),
+        body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error("Failed to add order note");
+}
+
+export interface AdminKPIs {
+    todayRevenue: number;
+    pendingOrdersCount: number;
+    lowStockVariantsCount: number;
+}
+
+export async function adminGetKPIs(token: string): Promise<AdminKPIs> {
+    const res = await fetch(`${BASE}/api/order/admin/kpis`, {
+        headers: authHeaders(token), cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to fetch KPIs");
+    return res.json();
+}
+
+export async function adminPartialDispatch(
+    token: string,
+    orderId: string,
+    orderItemIds: string[],
+    awbNumber: string,
+    carrierName: string,
+): Promise<{ allDispatched: boolean }> {
+    const res = await fetch(`${BASE}/api/order/admin/${orderId}/partial-dispatch`, {
+        method: "PUT", headers: authHeaders(token),
+        body: JSON.stringify({ orderItemIds, awbNumber, carrierName }),
+    });
+    if (!res.ok) throw new Error("Failed to dispatch items");
+    return res.json();
 }

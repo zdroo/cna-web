@@ -18,6 +18,8 @@ interface FormState {
     isShippable: boolean;
     isDigital: boolean;
     isReturnable: boolean;
+    publishAt: string;
+    unpublishAt: string;
 }
 
 const inputClass = "px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100";
@@ -46,8 +48,10 @@ export default function AdminEditProductPage() {
     const [form, setForm] = useState<FormState>({
         name: "", description: "", brand: "", categoryId: "",
         isActive: true, isShippable: true, isDigital: false, isReturnable: true,
+        publishAt: "", unpublishAt: "",
     });
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -68,9 +72,11 @@ export default function AdminEditProductPage() {
                     isShippable: product.isShippable ?? true,
                     isDigital: product.isDigital ?? false,
                     isReturnable: product.isReturnable ?? true,
+                    publishAt: product.publishAt ? new Date(product.publishAt).toISOString().slice(0, 16) : "",
+                    unpublishAt: product.unpublishAt ? new Date(product.unpublishAt).toISOString().slice(0, 16) : "",
                 });
             })
-            .catch(console.error)
+            .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
     }, [token, productId]);
 
@@ -96,6 +102,8 @@ export default function AdminEditProductPage() {
                 isShippable: form.isShippable,
                 isDigital: form.isDigital,
                 isReturnable: form.isReturnable,
+                publishAt: form.publishAt ? new Date(form.publishAt).toISOString() : null,
+                unpublishAt: form.unpublishAt ? new Date(form.unpublishAt).toISOString() : null,
             });
             router.push("/admin/products");
         } catch (e) {
@@ -106,7 +114,7 @@ export default function AdminEditProductPage() {
         }
     }
 
-    if (loading) {
+    if (loading || loadError) {
         return (
             <div className="flex flex-col gap-6">
                 <div className="flex items-center gap-4">
@@ -116,7 +124,11 @@ export default function AdminEditProductPage() {
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Editează produs</h1>
                 </div>
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
-                    <p className="text-gray-400 dark:text-gray-500">Se încarcă...</p>
+                    {loadError ? (
+                        <p className="text-sm text-red-500 dark:text-red-400">Nu s-a putut încărca produsul. Reîncarcă pagina.</p>
+                    ) : (
+                        <p className="text-gray-400 dark:text-gray-500">Se încarcă...</p>
+                    )}
                 </div>
             </div>
         );
@@ -197,6 +209,30 @@ export default function AdminEditProductPage() {
                             <Toggle checked={form.isShippable} onChange={(v) => setField("isShippable", v)} label="Cu livrare" />
                             <Toggle checked={form.isDigital} onChange={(v) => setField("isDigital", v)} label="Digital" />
                             <Toggle checked={form.isReturnable} onChange={(v) => setField("isReturnable", v)} label="Returnabil" />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 pt-2">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Programare publicare</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Publică de la</label>
+                                <input
+                                    type="datetime-local"
+                                    value={form.publishAt}
+                                    onChange={(e) => setField("publishAt", e.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Ascunde de la</label>
+                                <input
+                                    type="datetime-local"
+                                    value={form.unpublishAt}
+                                    onChange={(e) => setField("unpublishAt", e.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
                         </div>
                     </div>
 

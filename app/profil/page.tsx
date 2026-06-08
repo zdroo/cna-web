@@ -28,6 +28,41 @@ interface ProfileCard {
     accent?: string;
 }
 
+function CardItem({ card }: { card: ProfileCard }) {
+    const inner = (
+        <div className="flex items-center gap-4 p-4">
+            <div className={`p-2.5 rounded-xl ${card.accent ?? "bg-gray-100 dark:bg-gray-800"}`}>
+                {card.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 dark:text-gray-100">{card.label}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{card.description}</p>
+            </div>
+            <ChevronRight size={18} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
+        </div>
+    );
+
+    if (typeof card.action === "string") {
+        return (
+            <Link
+                href={card.action}
+                className="block hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-xl"
+            >
+                {inner}
+            </Link>
+        );
+    }
+
+    return (
+        <button
+            onClick={card.action}
+            className="w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-xl"
+        >
+            {inner}
+        </button>
+    );
+}
+
 export default function ProfilePage() {
     const { user, isLoaded, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
@@ -96,41 +131,6 @@ export default function ProfilePage() {
             action: "/admin",
             accent: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950",
         });
-    }
-
-    function CardItem({ card }: { card: ProfileCard }) {
-        const inner = (
-            <div className="flex items-center gap-4 p-4">
-                <div className={`p-2.5 rounded-xl ${card.accent ?? "bg-gray-100 dark:bg-gray-800"}`}>
-                    {card.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-gray-100">{card.label}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{card.description}</p>
-                </div>
-                <ChevronRight size={18} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
-            </div>
-        );
-
-        if (typeof card.action === "string") {
-            return (
-                <Link
-                    href={card.action}
-                    className="block hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-xl"
-                >
-                    {inner}
-                </Link>
-            );
-        }
-
-        return (
-            <button
-                onClick={card.action}
-                className="w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-xl"
-            >
-                {inner}
-            </button>
-        );
     }
 
     return (

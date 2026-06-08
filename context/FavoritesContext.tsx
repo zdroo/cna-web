@@ -45,8 +45,6 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         async function load() {
             try {
                 if (currentToken) {
-                    // Drop the anonymous session so logout shows empty favorites
-                    localStorage.removeItem(GUEST_SESSION_KEY);
                     const data = await getFavorites(currentToken, undefined);
                     applyItems(data);
                 } else {
@@ -74,11 +72,11 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
                 setFavorites((prev) => { const m = new Map(prev); m.delete(variantId); return m; });
                 setItems((prev) => prev.filter((i) => i.productVariantId !== variantId));
             } else {
-                const sessionId = getOrCreateSessionId();
+                const sessionId = token ? undefined : getOrCreateSessionId();
                 const favoriteItemId = await addFavorite(
                     variantId,
                     token ?? undefined,
-                    token ? undefined : sessionId
+                    sessionId
                 );
                 setFavorites((prev) => new Map(prev).set(variantId, favoriteItemId));
                 const updated = token

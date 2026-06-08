@@ -58,7 +58,7 @@ export default function AdminCarduriCadouPage() {
 
     async function handleDelete(id: string) {
         if (!token || !confirm("Ștergi cardul cadou?")) return;
-        try { await adminDeleteGiftCard(token, id); await load(); } catch { }
+        try { await adminDeleteGiftCard(token, id); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Eroare la ștergere"); }
     }
 
     return (

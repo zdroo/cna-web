@@ -435,7 +435,7 @@ export default function ComenziPage() {
                                         })}
                                     </p>
                                     <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mt-1">
-                                        {order.totalAmount.toFixed(2)} lei
+                                        {order.amountDue.toFixed(2)} lei
                                     </p>
                                 </div>
                                 <div className="flex flex-col items-end gap-1.5">
@@ -570,10 +570,32 @@ export default function ComenziPage() {
                                         </span>
                                     </div>
                                 ))}
-                                <div className="flex justify-end pt-2 border-t border-gray-50 dark:border-gray-800 mt-1">
-                                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                                        Total: {order.totalAmount.toFixed(2)} lei
-                                    </span>
+                                <div className="flex flex-col gap-1 pt-2 border-t border-gray-50 dark:border-gray-800 mt-1">
+                                    {(order.discountAmount > 0 || order.giftCardDeduction > 0) && (
+                                        <>
+                                            <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
+                                                <span>Subtotal</span>
+                                                <span>{order.totalAmount.toFixed(2)} lei</span>
+                                            </div>
+                                            {order.discountAmount > 0 && (
+                                                <div className="flex justify-between text-xs text-green-600 dark:text-green-400">
+                                                    <span>Cupon {order.couponCode ? `(${order.couponCode})` : ""}</span>
+                                                    <span>-{order.discountAmount.toFixed(2)} lei</span>
+                                                </div>
+                                            )}
+                                            {order.giftCardDeduction > 0 && (
+                                                <div className="flex justify-between text-xs text-green-600 dark:text-green-400">
+                                                    <span>Card cadou {order.giftCardCode ? `(${order.giftCardCode})` : ""}</span>
+                                                    <span>-{order.giftCardDeduction.toFixed(2)} lei</span>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                                            Total: {order.amountDue.toFixed(2)} lei
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 

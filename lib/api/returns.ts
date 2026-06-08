@@ -1,6 +1,17 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export type ReturnStatus = "Pending" | "Approved" | "Rejected" | "InTransit" | "Received" | "Refunded";
+export type ReturnReasonCode = "Defective" | "WrongItem" | "NotAsDescribed" | "ChangedMind" | "DamagedInShipping" | "Other";
+export type ReturnItemStatus = "Pending" | "Approved" | "Rejected";
+
+export const RETURN_REASON_LABEL: Record<ReturnReasonCode, string> = {
+    Defective: "Produs defect",
+    WrongItem: "Produs greșit",
+    NotAsDescribed: "Nu corespunde descrierii",
+    ChangedMind: "M-am răzgândit",
+    DamagedInShipping: "Deteriorat în transport",
+    Other: "Altul",
+};
 
 export const RETURN_STATUS_ORDER: Record<ReturnStatus, number> = {
     Pending: 0, Approved: 1, InTransit: 2, Received: 3, Refunded: 4, Rejected: 5,
@@ -25,9 +36,12 @@ export const RETURN_STATUS_STYLE: Record<ReturnStatus, string> = {
 };
 
 export interface ReturnItem {
+    id: string;
     orderItemId: string;
     productName: string;
     quantity: number;
+    itemStatus: ReturnItemStatus;
+    itemAdminNotes: string | null;
 }
 
 export interface ReturnRequest {
@@ -35,7 +49,11 @@ export interface ReturnRequest {
     orderId: string;
     status: ReturnStatus;
     reason: string;
+    reasonCode: ReturnReasonCode | null;
     adminNotes: string | null;
+    returnAwb: string | null;
+    returnCarrierName: string | null;
+    returnTrackingUrl: string | null;
     createdAt: string;
     items: ReturnItem[];
     refundAmount: number;
@@ -57,6 +75,13 @@ export interface CreateReturnPayload {
     orderId: string;
     reason: string;
     items: { orderItemId: string; quantity: number }[];
+    reasonCode?: ReturnReasonCode;
+}
+
+export interface ItemStatusUpdate {
+    returnItemId: string;
+    itemStatus: ReturnItemStatus;
+    itemAdminNotes?: string;
 }
 
 export async function getUserReturnRequests(token: string): Promise<ReturnRequest[]> {
@@ -102,12 +127,21 @@ export async function updateReturnStatus(
     token: string,
     returnRequestId: string,
     status: ReturnStatus,
-    adminNotes?: string
+    adminNotes?: string,
+    rma?: { awb: string; carrierName: string; trackingUrl?: string },
+    itemStatusUpdates?: ItemStatusUpdate[],
 ): Promise<void> {
     const res = await fetch(`${BASE}/api/returns/${returnRequestId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status, adminNotes: adminNotes ?? null }),
+        body: JSON.stringify({
+            status,
+            adminNotes: adminNotes ?? null,
+            returnAwb: rma?.awb ?? null,
+            returnCarrierName: rma?.carrierName ?? null,
+            returnTrackingUrl: rma?.trackingUrl ?? null,
+            itemStatusUpdates: itemStatusUpdates ?? null,
+        }),
     });
     if (!res.ok) throw new Error("Actualizarea statusului a eșuat.");
 }

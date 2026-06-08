@@ -13,6 +13,7 @@ export default function SettingsPage() {
     const router = useRouter();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
 
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
@@ -37,7 +38,7 @@ export default function SettingsPage() {
                 setFirstName(p.firstName ?? "");
                 setLastName(p.lastName ?? "");
             })
-            .catch(() => {})
+            .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
     }, [isLoaded, user, token, router]);
 
@@ -103,6 +104,10 @@ export default function SettingsPage() {
                 <div className="flex justify-center py-12">
                     <Loader2 size={24} className="animate-spin text-gray-400" />
                 </div>
+            ) : loadError ? (
+                <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                    Nu s-au putut încărca datele profilului. Reîncarcă pagina.
+                </p>
             ) : (
                 <>
                     {/* Personal info */}

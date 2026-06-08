@@ -74,10 +74,30 @@ export default function ConfirmationPage() {
                                 </p>
                             </div>
                         ))}
+                        {(order.discountAmount > 0 || order.giftCardDeduction > 0) && (
+                            <>
+                                <div className="flex items-center justify-between px-5 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                    <span>Subtotal</span>
+                                    <span>{order.totalAmount.toFixed(2)} lei</span>
+                                </div>
+                                {order.discountAmount > 0 && (
+                                    <div className="flex items-center justify-between px-5 py-2 text-sm text-green-600 dark:text-green-400">
+                                        <span>Cupon {order.couponCode ? `(${order.couponCode})` : ""}</span>
+                                        <span>-{order.discountAmount.toFixed(2)} lei</span>
+                                    </div>
+                                )}
+                                {order.giftCardDeduction > 0 && (
+                                    <div className="flex items-center justify-between px-5 py-2 text-sm text-green-600 dark:text-green-400">
+                                        <span>Card cadou {order.giftCardCode ? `(${order.giftCardCode})` : ""}</span>
+                                        <span>-{order.giftCardDeduction.toFixed(2)} lei</span>
+                                    </div>
+                                )}
+                            </>
+                        )}
                         <div className="flex items-center justify-between px-5 py-4 bg-gray-50 dark:bg-gray-800/50">
-                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Total</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Total plătit</span>
                             <span className="text-base font-bold text-gray-900 dark:text-gray-100">
-                                {order.totalAmount.toFixed(2)} lei
+                                {order.amountDue.toFixed(2)} lei
                             </span>
                         </div>
                     </div>

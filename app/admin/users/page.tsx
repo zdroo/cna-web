@@ -28,6 +28,8 @@ export default function AdminUsersPage() {
     const [loading, setLoading] = useState(true);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+
     useEffect(() => {
         if (!token) return;
         let cancelled = false;

@@ -62,6 +62,11 @@ export interface Order {
     invoiceDate?: string;
     paymentMethod?: string;
     companySnapshot?: CompanyOrderSnapshot;
+    couponCode?: string;
+    discountAmount: number;
+    giftCardCode?: string;
+    giftCardDeduction: number;
+    amountDue: number;
 }
 
 export interface PagedOrdersResult {

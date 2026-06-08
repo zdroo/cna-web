@@ -75,7 +75,7 @@ export default function CheckoutPage() {
         getCompanyProfile(token).then(setCompanyProfile).catch(() => {});
     }, [isLoaded, user, items.length, token, router]);
 
-    if (!isLoaded || !user || items.length === 0) return null;
+    if (!isLoaded || !user || (items.length === 0 && !submittedRef.current)) return null;
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -156,6 +156,11 @@ export default function CheckoutPage() {
         setCouponInput("");
         setCouponResult(null);
         setAppliedCoupon(null);
+        if (appliedGiftCard) {
+            setGiftCardResult(null);
+            setAppliedGiftCard(null);
+            setGiftCardInput("");
+        }
     }
 
     async function applyGiftCard() {

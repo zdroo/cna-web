@@ -35,7 +35,7 @@ export default function AdminUnitatiPage() {
         if (!token) return;
         adminGetMeasurementUnits(token)
             .then(setUnits)
-            .catch(console.error)
+            .catch(() => setError("Nu s-au putut încărca unitățile de măsură."))
             .finally(() => setLoading(false));
     }, [token]);
 
@@ -128,6 +128,10 @@ export default function AdminUnitatiPage() {
                     </button>
                 )}
             </div>
+
+            {!showForm && error && (
+                <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">{error}</p>
+            )}
 
             {showForm && (
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">

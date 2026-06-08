@@ -6,6 +6,8 @@ import { getVariantDetail } from "@/lib/api/products";
 import ImageGallery from "@/components/products/ImageGallery";
 import AddToCartButton from "@/components/products/AddToCartButton";
 import ReviewForm from "@/components/products/ReviewForm";
+import NotifyMeButton from "@/components/products/NotifyMeButton";
+import ReviewList from "@/components/products/ReviewList";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://cnashop.ro";
 
@@ -200,8 +202,9 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
                     )}
 
                     {/* Actions */}
-                    <div className="flex gap-3 mt-2">
+                    <div className="flex flex-col gap-3 mt-2">
                         <AddToCartButton variant={variant} />
+                        {isOutOfStock && <NotifyMeButton variantId={variant.variantId} />}
                     </div>
 
                 </div>
@@ -241,48 +244,7 @@ export default async function VariantDetailPage({ params }: VariantDetailPagePro
                 <ReviewForm variantId={variant.variantId} existingReviews={variant.reviews} />
 
                 {/* List */}
-                {variant.reviews.length > 0 ? (
-                    <div className="flex flex-col gap-4">
-                        {variant.reviews.map((review) => (
-                            <div key={review.reviewId} className="bg-white dark:bg-gray-900 dark:border dark:border-gray-800 rounded-xl p-6 shadow-sm">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                                            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-                                                {review.userName?.charAt(0).toUpperCase() ?? "?"}
-                                            </span>
-                                        </div>
-                                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                                            {review.userName || "Anonim"}
-                                        </span>
-                                    </div>
-                                    <span className="text-sm text-gray-400 dark:text-gray-500">
-                                        {new Date(review.createdAt).toLocaleDateString("ro-RO")}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-0.5 mb-3">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <Star
-                                            key={star}
-                                            size={14}
-                                            className={star <= review.rating
-                                                ? "fill-yellow-400 text-yellow-400"
-                                                : "text-gray-200 dark:text-gray-700"
-                                            }
-                                        />
-                                    ))}
-                                </div>
-                                {review.comment && (
-                                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{review.comment}</p>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
-                        Nicio recenzie încă. Fii primul care recenzează acest produs.
-                    </p>
-                )}
+                <ReviewList reviews={variant.reviews} variantId={variant.variantId} />
 
             </div>
 

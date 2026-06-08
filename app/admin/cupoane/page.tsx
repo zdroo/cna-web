@@ -68,12 +68,12 @@ export default function AdminCupoanePage() {
 
     async function handleDelete(id: string) {
         if (!token || !confirm("Ștergi cuponul?")) return;
-        try { await adminDeleteCoupon(token, id); await load(); } catch { }
+        try { await adminDeleteCoupon(token, id); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Eroare la ștergere"); }
     }
 
     async function handleToggle(id: string) {
         if (!token) return;
-        try { await adminToggleCoupon(token, id); await load(); } catch { }
+        try { await adminToggleCoupon(token, id); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Eroare la actualizare"); }
     }
 
     return (

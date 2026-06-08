@@ -1,8 +1,8 @@
 import { PagedResult, ProductSummary, ProductVariant, ProductVariantDetail, VariantsFilter } from "@/types/product";
 
-export async function getProducts(category?: string): Promise<ProductSummary[]> {
+export async function getProducts(categorySlug?: string): Promise<ProductSummary[]> {
     const params = new URLSearchParams();
-    if (category) params.append("category", category);
+    if (categorySlug) params.append("categorySlug", categorySlug);
 
     const queryString = params.toString();
     const url = `${process.env.NEXT_PUBLIC_API_URL}/api/products${queryString ? `?${queryString}` : ""}`;

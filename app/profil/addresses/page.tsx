@@ -32,6 +32,7 @@ export default function AddressesPage() {
     const router = useRouter();
     const [contacts, setContacts] = useState<ShippingContact[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
 
     const [showAdd, setShowAdd] = useState(false);
     const [addForm, setAddForm] = useState<FormData>(EMPTY_FORM);
@@ -52,7 +53,7 @@ export default function AddressesPage() {
         if (!user || !token) { router.replace("/auth/login"); return; }
         getShippingContacts(token)
             .then(setContacts)
-            .catch(() => {})
+            .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
     }, [isLoaded, user, token, router]);
 
@@ -149,6 +150,10 @@ export default function AddressesPage() {
                 <div className="flex justify-center py-12">
                     <Loader2 size={24} className="animate-spin text-gray-400" />
                 </div>
+            ) : loadError ? (
+                <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                    Nu s-au putut încărca adresele. Reîncarcă pagina.
+                </p>
             ) : (
                 <>
                     {actionError && (
