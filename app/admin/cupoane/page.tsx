@@ -12,6 +12,7 @@ const EMPTY = {
     discountValue: "",
     minOrderAmount: "",
     maxUses: "",
+    maxUsesPerUser: "",
     expiresAt: "",
 };
 
@@ -54,7 +55,8 @@ export default function AdminCupoanePage() {
                 discountValue: parseFloat(form.discountValue),
                 minOrderAmount: form.minOrderAmount ? parseFloat(form.minOrderAmount) : null,
                 maxUses: form.maxUses ? parseInt(form.maxUses) : null,
-                expiresAt: form.expiresAt || null,
+                maxUsesPerUser: form.maxUsesPerUser ? parseInt(form.maxUsesPerUser) : null,
+                expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
             });
             setForm(EMPTY);
             setShowForm(false);
@@ -133,9 +135,15 @@ export default function AdminCupoanePage() {
                                 placeholder="Fără limită" className={inputCls} />
                         </FormField>
 
-                        <FormField label="Utilizări maxime">
+                        <FormField label="Utilizări maxime (total)">
                             <input type="number" min="1" step="1" value={form.maxUses}
                                 onChange={(e) => setForm((p) => ({ ...p, maxUses: e.target.value }))}
+                                placeholder="Nelimitat" className={inputCls} />
+                        </FormField>
+
+                        <FormField label="Utilizări per utilizator">
+                            <input type="number" min="1" step="1" value={form.maxUsesPerUser}
+                                onChange={(e) => setForm((p) => ({ ...p, maxUsesPerUser: e.target.value }))}
                                 placeholder="Nelimitat" className={inputCls} />
                         </FormField>
 
@@ -191,6 +199,7 @@ export default function AdminCupoanePage() {
                                     </td>
                                     <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400">
                                         {c.usesCount}{c.maxUses ? ` / ${c.maxUses}` : ""}
+                                        {c.maxUsesPerUser ? ` · max ${c.maxUsesPerUser}/user` : ""}
                                     </td>
                                     <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400">
                                         {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString("ro-RO") : "—"}

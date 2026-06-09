@@ -44,7 +44,7 @@ export default function AdminCarduriCadouPage() {
             await adminCreateGiftCard(token, {
                 code: form.code,
                 value: parseFloat(form.value),
-                expiresAt: form.expiresAt || null,
+                expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
             });
             setForm(EMPTY);
             setShowForm(false);

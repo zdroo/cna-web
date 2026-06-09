@@ -15,6 +15,7 @@ export interface CouponItem {
     discountValue: number;
     minOrderAmount: number | null;
     maxUses: number | null;
+    maxUsesPerUser: number | null;
     usesCount: number;
     expiresAt: string | null;
     isActive: boolean;
@@ -45,6 +46,7 @@ export async function adminCreateCoupon(token: string, data: {
     discountValue: number;
     minOrderAmount: number | null;
     maxUses: number | null;
+    maxUsesPerUser: number | null;
     expiresAt: string | null;
 }): Promise<void> {
     const res = await fetch(`${BASE}/api/coupons`, {

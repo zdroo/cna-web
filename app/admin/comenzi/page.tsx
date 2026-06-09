@@ -34,11 +34,6 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
     Cancelled: "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
 };
 
-const PREV_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
-    Confirmed: "Pending",
-    Shipped:   "Confirmed",
-    Delivered: "Shipped",
-};
 
 const TABS: { label: string; value: OrderStatus | undefined }[] = [
     { label: "Toate",        value: undefined    },
@@ -126,15 +121,6 @@ export default function AdminComenziPage() {
         } finally {
             setUpdating(null);
         }
-    }
-
-    async function handleStatusBack(orderId: string, currentStatus: OrderStatus) {
-        const targetStatus = PREV_STATUS[currentStatus];
-        if (!targetStatus) return;
-        const currentLabel = STATUS_LABEL[currentStatus];
-        const targetLabel = STATUS_LABEL[targetStatus];
-        if (!window.confirm(`Ești sigur că vrei să reverți comanda din "${currentLabel}" înapoi în "${targetLabel}"?`)) return;
-        await handleStatusUpdate(orderId, targetStatus);
     }
 
     async function handleCancel(orderId: string) {
@@ -330,13 +316,6 @@ export default function AdminComenziPage() {
                                                 {order.status === "Confirmed" && (
                                                     <>
                                                         <button
-                                                            onClick={() => handleStatusBack(order.orderId, "Confirmed")}
-                                                            disabled={updating === order.orderId}
-                                                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                                                        >
-                                                            ← În așteptare
-                                                        </button>
-                                                        <button
                                                             onClick={() => handleDispatch(order.orderId)}
                                                             disabled={updating === order.orderId}
                                                             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900 transition-colors disabled:opacity-50"
@@ -356,13 +335,6 @@ export default function AdminComenziPage() {
                                                 {order.status === "Shipped" && (
                                                     <>
                                                         <button
-                                                            onClick={() => handleStatusBack(order.orderId, "Shipped")}
-                                                            disabled={updating === order.orderId}
-                                                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                                                        >
-                                                            ← Confirmată
-                                                        </button>
-                                                        <button
                                                             onClick={() => handleStatusUpdate(order.orderId, "Delivered")}
                                                             disabled={updating === order.orderId}
                                                             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-50 dark:bg-green-950 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900 transition-colors disabled:opacity-50"
@@ -370,16 +342,6 @@ export default function AdminComenziPage() {
                                                             Marchează livrată
                                                         </button>
                                                     </>
-                                                )}
-
-                                                {order.status === "Delivered" && (
-                                                    <button
-                                                        onClick={() => handleStatusBack(order.orderId, "Delivered")}
-                                                        disabled={updating === order.orderId}
-                                                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                                                    >
-                                                        ← Expediată
-                                                    </button>
                                                 )}
 
                                                 <button
