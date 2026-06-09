@@ -73,7 +73,7 @@ export default function ReturnsPage() {
                     </div>
                     <p className="font-semibold text-gray-900 dark:text-gray-100">Nicio cerere de retur activă</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
-                        Retururile pot fi inițiate din pagina comenzilor, în termen de 30 de zile de la plasare.
+                        Retururile pot fi inițiate din pagina comenzilor, în termen de 30 de zile de la data livrării.
                     </p>
                     <Link
                         href="/comenzi"

@@ -61,7 +61,8 @@ function shortId(id: string) {
 }
 
 export default function AdminComenziPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const isAdmin = user?.role === "Admin";
     const [orders, setOrders] = useState<OrderAdmin[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(false);
@@ -297,7 +298,7 @@ export default function AdminComenziPage() {
                                         <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex items-center justify-center gap-2 flex-wrap">
 
-                                                {order.isB2B && !order.isPaid && order.paymentMethod === "NetPayment" && (
+                                                {isAdmin && order.isB2B && !order.isPaid && order.paymentMethod === "NetPayment" && (
                                                     <button
                                                         onClick={() => handleMarkB2BPaid(order.orderId)}
                                                         disabled={updating === order.orderId}

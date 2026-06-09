@@ -17,10 +17,10 @@ const NAV: NavItem[] = [
     { href: "/admin/comenzi", label: "Comenzi", icon: ShoppingCart },
     { href: "/admin/returns", label: "Retururi", icon: RotateCcw },
     { href: "/admin/statistici", label: "Statistici", icon: BarChart2 },
-    { href: "/admin/users", label: "Utilizatori", icon: Users },
 ];
 
 const ADMIN_ONLY_NAV: NavItem[] = [
+    { href: "/admin/users", label: "Utilizatori", icon: Users },
     { href: "/admin/despre-noi", label: "Despre noi", icon: FileText },
     { href: "/admin/cupoane", label: "Cupoane", icon: Tag },
     { href: "/admin/carduri-cadou", label: "Carduri cadou", icon: Gift },

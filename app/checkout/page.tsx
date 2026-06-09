@@ -156,11 +156,6 @@ export default function CheckoutPage() {
         setCouponInput("");
         setCouponResult(null);
         setAppliedCoupon(null);
-        if (appliedGiftCard) {
-            setGiftCardResult(null);
-            setAppliedGiftCard(null);
-            setGiftCardInput("");
-        }
     }
 
     async function applyGiftCard() {

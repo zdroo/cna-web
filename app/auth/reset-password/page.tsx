@@ -24,6 +24,8 @@ function ResetPasswordForm() {
         e.preventDefault();
         if (password !== confirm) { setError("Parolele nu coincid."); return; }
         if (password.length < 8) { setError("Parola trebuie să aibă cel puțin 8 caractere."); return; }
+        if (!/[A-Z]/.test(password)) { setError("Parola trebuie să conțină cel puțin o literă mare."); return; }
+        if (!/[0-9]/.test(password)) { setError("Parola trebuie să conțină cel puțin o cifră."); return; }
         setError(null);
         setLoading(true);
         try {
