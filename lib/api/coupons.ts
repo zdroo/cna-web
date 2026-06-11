@@ -22,10 +22,12 @@ export interface CouponItem {
     createdAt: string;
 }
 
-export async function validateCoupon(code: string, orderTotal: number): Promise<CouponValidation> {
+export async function validateCoupon(code: string, orderTotal: number, token?: string): Promise<CouponValidation> {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
     const res = await fetch(`${BASE}/api/coupons/validate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ code, orderTotal }),
     });
     if (!res.ok) throw new Error("Eroare la validarea cuponului");

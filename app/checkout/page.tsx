@@ -142,7 +142,7 @@ export default function CheckoutPage() {
         if (!couponInput.trim()) return;
         setCouponLoading(true);
         try {
-            const result = await validateCoupon(couponInput.trim(), totalPrice);
+            const result = await validateCoupon(couponInput.trim(), totalPrice, token ?? undefined);
             setCouponResult(result);
             if (result.isValid) setAppliedCoupon(couponInput.trim().toUpperCase());
         } catch {
