@@ -1,3 +1,5 @@
+import { authFetch } from "./http";
+
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export type ReturnStatus = "Pending" | "Approved" | "Rejected" | "InTransit" | "Received" | "Refunded";
@@ -85,9 +87,7 @@ export interface ItemStatusUpdate {
 }
 
 export async function getUserReturnRequests(token: string): Promise<ReturnRequest[]> {
-    const res = await fetch(`${BASE}/api/returns`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`${BASE}/api/returns`, {}, token);
     if (!res.ok) {
         const json = await res.json().catch(() => null);
         throw new Error(json?.message || "Nu s-au putut încărca cererile de retur.");
@@ -96,11 +96,11 @@ export async function getUserReturnRequests(token: string): Promise<ReturnReques
 }
 
 export async function createReturnRequest(token: string, payload: CreateReturnPayload): Promise<{ returnRequestId: string }> {
-    const res = await fetch(`${BASE}/api/returns`, {
+    const res = await authFetch(`${BASE}/api/returns`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-    });
+    }, token);
     if (!res.ok) {
         const json = await res.json().catch(() => null);
         throw new Error(json?.message || "Nu s-a putut trimite cererea de retur.");
@@ -116,9 +116,7 @@ export async function getAdminReturnRequests(
 ): Promise<AdminReturnPagedResult> {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
     if (status !== undefined) params.set("status", status);
-    const res = await fetch(`${BASE}/api/returns/admin?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`${BASE}/api/returns/admin?${params}`, {}, token);
     if (!res.ok) throw new Error("Nu s-au putut încărca cererile de retur.");
     return res.json();
 }
@@ -131,9 +129,9 @@ export async function updateReturnStatus(
     rma?: { awb: string; carrierName: string; trackingUrl?: string },
     itemStatusUpdates?: ItemStatusUpdate[],
 ): Promise<void> {
-    const res = await fetch(`${BASE}/api/returns/${returnRequestId}/status`, {
+    const res = await authFetch(`${BASE}/api/returns/${returnRequestId}/status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             status,
             adminNotes: adminNotes ?? null,
@@ -142,6 +140,6 @@ export async function updateReturnStatus(
             returnTrackingUrl: rma?.trackingUrl ?? null,
             itemStatusUpdates: itemStatusUpdates ?? null,
         }),
-    });
+    }, token);
     if (!res.ok) throw new Error("Actualizarea statusului a eșuat.");
 }

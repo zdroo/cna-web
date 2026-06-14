@@ -1,3 +1,5 @@
+import { authFetch } from "./http";
+
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export type OrderStatus = "Pending" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
@@ -78,34 +80,28 @@ export interface PagedOrdersResult {
 }
 
 export async function getOrders(token: string, page = 1, pageSize = 10): Promise<PagedOrdersResult> {
-    const res = await fetch(`${BASE}/api/order?page=${page}&pageSize=${pageSize}`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`${BASE}/api/order?page=${page}&pageSize=${pageSize}`, {}, token);
     if (!res.ok) throw new Error(`getOrders failed: ${res.status}`);
     return res.json();
 }
 
 export async function getOrderById(token: string, orderId: string): Promise<Order> {
-    const res = await fetch(`${BASE}/api/order/${orderId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+    const res = await authFetch(`${BASE}/api/order/${orderId}`, {
         cache: "no-store",
-    });
+    }, token);
     if (!res.ok) throw new Error(`getOrderById failed: ${res.status}`);
     return res.json();
 }
 
 export async function cancelOrder(token: string, orderId: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/order/${orderId}/cancel`, {
+    const res = await authFetch(`${BASE}/api/order/${orderId}/cancel`, {
         method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    }, token);
     if (!res.ok) throw new Error("Nu s-a putut anula comanda");
 }
 
 export async function downloadInvoice(token: string, orderId: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/order/${orderId}/invoice`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`${BASE}/api/order/${orderId}/invoice`, {}, token);
     if (!res.ok) throw new Error("Nu s-a putut descărca factura");
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);

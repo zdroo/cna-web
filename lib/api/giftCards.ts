@@ -1,3 +1,5 @@
+import { authFetch } from "./http";
+
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export interface GiftCardValidation {
@@ -28,9 +30,7 @@ export async function validateGiftCard(code: string, orderTotal: number): Promis
 }
 
 export async function adminGetGiftCards(token: string): Promise<GiftCardItem[]> {
-    const res = await fetch(`${BASE}/api/gift-cards`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`${BASE}/api/gift-cards`, {}, token);
     if (!res.ok) throw new Error("Eroare la încărcarea cardurilor cadou");
     return res.json();
 }
@@ -40,11 +40,11 @@ export async function adminCreateGiftCard(token: string, data: {
     value: number;
     expiresAt: string | null;
 }): Promise<void> {
-    const res = await fetch(`${BASE}/api/gift-cards`, {
+    const res = await authFetch(`${BASE}/api/gift-cards`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-    });
+    }, token);
     if (!res.ok) {
         const json = await res.json().catch(() => null);
         throw new Error(json?.message || "Nu s-a putut crea cardul cadou");
@@ -52,10 +52,9 @@ export async function adminCreateGiftCard(token: string, data: {
 }
 
 export async function adminDeleteGiftCard(token: string, giftCardId: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/gift-cards/${giftCardId}`, {
+    const res = await authFetch(`${BASE}/api/gift-cards/${giftCardId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    }, token);
     if (!res.ok) throw new Error("Nu s-a putut șterge cardul cadou");
 }
 

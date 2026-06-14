@@ -1,3 +1,5 @@
+import { authFetch } from "./http";
+
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export interface ShippingContact {
@@ -25,9 +27,7 @@ export interface AddShippingContactRequest {
 }
 
 export async function getShippingContacts(token: string): Promise<ShippingContact[]> {
-    const res = await fetch(`${BASE}/api/shipping-contacts`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`${BASE}/api/shipping-contacts`, {}, token);
     if (!res.ok) throw new Error(`getShippingContacts failed: ${res.status}`);
     return res.json();
 }
@@ -36,21 +36,20 @@ export async function addShippingContact(
     token: string,
     data: AddShippingContactRequest
 ): Promise<string> {
-    const res = await fetch(`${BASE}/api/shipping-contacts`, {
+    const res = await authFetch(`${BASE}/api/shipping-contacts`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-    });
+    }, token);
     if (!res.ok) throw new Error("Nu s-a putut salva adresa");
     const json = await res.json();
     return json.shippingContactId;
 }
 
 export async function deleteShippingContact(token: string, id: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/shipping-contacts/${id}`, {
+    const res = await authFetch(`${BASE}/api/shipping-contacts/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    }, token);
     if (!res.ok) throw new Error("Nu s-a putut șterge adresa");
 }
 
@@ -59,18 +58,17 @@ export async function updateShippingContact(
     id: string,
     data: AddShippingContactRequest
 ): Promise<void> {
-    const res = await fetch(`${BASE}/api/shipping-contacts/${id}`, {
+    const res = await authFetch(`${BASE}/api/shipping-contacts/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-    });
+    }, token);
     if (!res.ok) throw new Error("Nu s-a putut actualiza adresa");
 }
 
 export async function setDefaultShippingContact(token: string, id: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/shipping-contacts/${id}/set-default`, {
+    const res = await authFetch(`${BASE}/api/shipping-contacts/${id}/set-default`, {
         method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    }, token);
     if (!res.ok) throw new Error("Nu s-a putut seta adresa implicită");
 }

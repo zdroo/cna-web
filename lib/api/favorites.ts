@@ -1,4 +1,5 @@
 import { FavoriteItem } from "@/types/favorite";
+import { authFetch } from "./http";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
@@ -26,6 +27,15 @@ export async function addFavorite(productVariantId: string, token?: string, sess
     });
 
     if (!response.ok) throw new Error("Failed to add favorite");
+    return response.json();
+}
+
+export async function mergeSessionFavorites(token: string, sessionId: string): Promise<FavoriteItem[]> {
+    const response = await authFetch(`${BASE}/api/favorites/merge?sessionId=${sessionId}`, {
+        method: "POST",
+    }, token);
+
+    if (!response.ok) return [];
     return response.json();
 }
 

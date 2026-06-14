@@ -35,6 +35,7 @@ interface Variant {
     variantSlug: string;
     imageUrls: string[];
     attributes?: Record<string, string>;
+    rowVersion?: string;
 }
 
 interface Product {
@@ -456,6 +457,7 @@ export default function AdminVariantePage() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingRowVersion, setEditingRowVersion] = useState<string | undefined>(undefined);
     const [form, setForm] = useState<FormState>(emptyForm);
     const [saving, setSaving] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -484,6 +486,7 @@ export default function AdminVariantePage() {
 
     function openEdit(variant: Variant) {
         setEditingId(variant.variantId);
+        setEditingRowVersion(variant.rowVersion);
         setForm({
             productId: variant.productId,
             sku: variant.sku,
@@ -504,6 +507,7 @@ export default function AdminVariantePage() {
     function closeForm() {
         setShowForm(false);
         setEditingId(null);
+        setEditingRowVersion(undefined);
         setForm(emptyForm);
         setError(null);
     }
@@ -570,6 +574,7 @@ export default function AdminVariantePage() {
                     imageUrls: form.imageUrls.filter(Boolean),
                     isActive: form.isActive,
                     discountedPrice,
+                    rowVersion: editingRowVersion,
                 });
                 const updated = await adminGetVariants(token);
                 setVariants(updated as Variant[]);
@@ -590,7 +595,11 @@ export default function AdminVariantePage() {
             }
             closeForm();
         } catch (e) {
-            setError("Operațiunea a eșuat. Încearcă din nou.");
+            setError(
+                e instanceof Error && e.message.includes("reîncarcă pagina")
+                    ? e.message
+                    : "Operațiunea a eșuat. Încearcă din nou."
+            );
             console.error(e);
         } finally {
             setSaving(false);

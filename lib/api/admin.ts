@@ -1,8 +1,8 @@
+import { authFetch } from "./http";
+
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
-function authHeaders(token: string) {
-    return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-}
+const JSON_HEADERS = { "Content-Type": "application/json" };
 
 // ── Orders ──────────────────────────────────────────────────
 export interface OrderItemAdmin {
@@ -80,9 +80,10 @@ export async function adminGetMonthlyProductSales(
     months: number = 12,
     top: number = 5,
 ): Promise<MonthlyProductSales> {
-    const res = await fetch(
+    const res = await authFetch(
         `${BASE}/api/order/admin/monthly-product-sales?months=${months}&top=${top}`,
-        { headers: authHeaders(token), cache: "no-store" },
+        { cache: "no-store" },
+        token,
     );
     if (!res.ok) throw new Error("Failed to fetch monthly product sales");
     return res.json();
@@ -95,17 +96,17 @@ export async function adminGetTopSellingVariants(
 ): Promise<TopVariantPoint[]> {
     const qs = new URLSearchParams({ top: String(top) });
     if (days > 0) qs.set("days", String(days));
-    const res = await fetch(`${BASE}/api/order/admin/top-variants?${qs}`, {
-        headers: authHeaders(token), cache: "no-store",
-    });
+    const res = await authFetch(`${BASE}/api/order/admin/top-variants?${qs}`, {
+        cache: "no-store",
+    }, token);
     if (!res.ok) throw new Error("Failed to fetch top selling variants");
     return res.json();
 }
 
 export async function adminGetRevenueStats(token: string, granularity: RevenueGranularity): Promise<RevenuePoint[]> {
-    const res = await fetch(`${BASE}/api/order/admin/revenue?granularity=${granularity}`, {
-        headers: authHeaders(token), cache: "no-store",
-    });
+    const res = await authFetch(`${BASE}/api/order/admin/revenue?granularity=${granularity}`, {
+        cache: "no-store",
+    }, token);
     if (!res.ok) throw new Error("Failed to fetch revenue stats");
     return res.json();
 }
@@ -127,68 +128,68 @@ export async function adminGetOrders(
     if (params?.isPaid !== undefined) qs.set("isPaid", String(params.isPaid));
     qs.set("page", String(Math.max(1, params?.page ?? 1)));
     qs.set("pageSize", String(Math.min(50, Math.max(1, params?.pageSize ?? 20))));
-    const res = await fetch(`${BASE}/api/order/admin?${qs}`, { headers: authHeaders(token), cache: "no-store" });
+    const res = await authFetch(`${BASE}/api/order/admin?${qs}`, { cache: "no-store" }, token);
     if (!res.ok) throw new Error("Failed to fetch orders");
     return res.json();
 }
 
 export async function adminUpdateOrderStatus(token: string, orderId: string, newStatus: OrderStatus): Promise<void> {
-    const res = await fetch(`${BASE}/api/order/${orderId}/status`, {
-        method: "PUT", headers: authHeaders(token),
+    const res = await authFetch(`${BASE}/api/order/${orderId}/status`, {
+        method: "PUT", headers: JSON_HEADERS,
         body: JSON.stringify({ newStatus }),
-    });
+    }, token);
     if (!res.ok) throw new Error("Failed to update order status");
 }
 
 export async function adminDispatchOrder(token: string, orderId: string): Promise<{ awbNumber: string; carrierName: string }> {
-    const res = await fetch(`${BASE}/api/order/admin/${orderId}/dispatch`, {
-        method: "PUT", headers: authHeaders(token),
-    });
+    const res = await authFetch(`${BASE}/api/order/admin/${orderId}/dispatch`, {
+        method: "PUT",
+    }, token);
     if (!res.ok) throw new Error("Failed to dispatch order");
     return res.json();
 }
 
 export async function adminCancelOrder(token: string, orderId: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/order/admin/${orderId}/cancel`, {
-        method: "PUT", headers: authHeaders(token),
-    });
+    const res = await authFetch(`${BASE}/api/order/admin/${orderId}/cancel`, {
+        method: "PUT",
+    }, token);
     if (!res.ok) throw new Error("Failed to cancel order");
 }
 
 // ── Categories ──────────────────────────────────────────────
 export async function adminGetCategories(token: string) {
-    const res = await fetch(`${BASE}/api/categories`, { headers: authHeaders(token), cache: "no-store" });
+    const res = await authFetch(`${BASE}/api/categories`, { cache: "no-store" }, token);
     if (!res.ok) throw new Error("Failed to fetch categories");
     return res.json();
 }
 
 export async function adminCreateCategory(token: string, data: { name: string; slug: string }) {
-    const res = await fetch(`${BASE}/api/categories`, {
-        method: "POST", headers: authHeaders(token), body: JSON.stringify({ ...data, parentCategoryId: null }),
-    });
+    const res = await authFetch(`${BASE}/api/categories`, {
+        method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ ...data, parentCategoryId: null }),
+    }, token);
     if (!res.ok) throw new Error("Failed to create category");
     return res.json();
 }
 
 export async function adminUpdateCategory(token: string, categoryId: string, data: { name: string; slug: string }) {
-    const res = await fetch(`${BASE}/api/categories/${categoryId}`, {
-        method: "PUT", headers: authHeaders(token), body: JSON.stringify(data),
-    });
+    const res = await authFetch(`${BASE}/api/categories/${categoryId}`, {
+        method: "PUT", headers: JSON_HEADERS, body: JSON.stringify(data),
+    }, token);
     if (!res.ok) throw new Error("Failed to update category");
 }
 
 export async function adminDeleteCategoriesBatch(token: string, categoryIds: string[]) {
-    const res = await fetch(`${BASE}/api/categories/batch`, {
-        method: "DELETE", headers: authHeaders(token),
+    const res = await authFetch(`${BASE}/api/categories/batch`, {
+        method: "DELETE", headers: JSON_HEADERS,
         body: JSON.stringify({ categoryIds }),
-    });
+    }, token);
     if (!res.ok) throw new Error("Batch delete failed");
 }
 
 export async function adminDeleteCategory(token: string, categoryId: string) {
-    const res = await fetch(`${BASE}/api/categories/${categoryId}`, {
-        method: "DELETE", headers: authHeaders(token),
-    });
+    const res = await authFetch(`${BASE}/api/categories/${categoryId}`, {
+        method: "DELETE",
+    }, token);
     if (!res.ok) throw new Error("Failed to delete category");
 }
 
@@ -199,24 +200,24 @@ export interface CategoryImportResult {
 }
 
 export async function adminImportCategories(token: string, rows: CategoryImportRow[]): Promise<CategoryImportResult> {
-    const res = await fetch(`${BASE}/api/categories/import`, {
+    const res = await authFetch(`${BASE}/api/categories/import`, {
         method: "POST",
-        headers: authHeaders(token),
+        headers: JSON_HEADERS,
         body: JSON.stringify({ rows }),
-    });
+    }, token);
     if (!res.ok) throw new Error("Import failed");
     return res.json();
 }
 
 // ── Products ──────────────────────────────────────────────
 export async function adminGetProducts(token: string) {
-    const res = await fetch(`${BASE}/api/products`, { headers: authHeaders(token), cache: "no-store" });
+    const res = await authFetch(`${BASE}/api/products`, { cache: "no-store" }, token);
     if (!res.ok) throw new Error("Failed to fetch products");
     return res.json();
 }
 
 export async function adminGetProductById(token: string, productId: string) {
-    const res = await fetch(`${BASE}/api/products/${productId}`, { headers: authHeaders(token), cache: "no-store" });
+    const res = await authFetch(`${BASE}/api/products/${productId}`, { cache: "no-store" }, token);
     if (!res.ok) throw new Error("Failed to fetch product");
     return res.json();
 }
@@ -224,9 +225,9 @@ export async function adminGetProductById(token: string, productId: string) {
 export async function adminCreateProduct(token: string, data: {
     name: string; description: string; brand: string; categoryId: string;
 }) {
-    const res = await fetch(`${BASE}/api/products`, {
-        method: "POST", headers: authHeaders(token), body: JSON.stringify(data),
-    });
+    const res = await authFetch(`${BASE}/api/products`, {
+        method: "POST", headers: JSON_HEADERS, body: JSON.stringify(data),
+    }, token);
     if (!res.ok) throw new Error("Failed to create product");
     return res.json();
 }
@@ -236,24 +237,24 @@ export async function adminUpdateProduct(token: string, productId: string, data:
     isActive: boolean; isShippable: boolean; isDigital: boolean; isReturnable: boolean;
     publishAt?: string | null; unpublishAt?: string | null;
 }) {
-    const res = await fetch(`${BASE}/api/products/${productId}`, {
-        method: "PUT", headers: authHeaders(token), body: JSON.stringify(data),
-    });
+    const res = await authFetch(`${BASE}/api/products/${productId}`, {
+        method: "PUT", headers: JSON_HEADERS, body: JSON.stringify(data),
+    }, token);
     if (!res.ok) throw new Error("Failed to update product");
 }
 
 export async function adminDeleteProductsBatch(token: string, productIds: string[]) {
-    const res = await fetch(`${BASE}/api/products/batch`, {
-        method: "DELETE", headers: authHeaders(token),
+    const res = await authFetch(`${BASE}/api/products/batch`, {
+        method: "DELETE", headers: JSON_HEADERS,
         body: JSON.stringify({ productIds }),
-    });
+    }, token);
     if (!res.ok) throw new Error("Batch delete failed");
 }
 
 export async function adminDeleteProduct(token: string, productId: string) {
-    const res = await fetch(`${BASE}/api/products/${productId}`, {
-        method: "DELETE", headers: authHeaders(token),
-    });
+    const res = await authFetch(`${BASE}/api/products/${productId}`, {
+        method: "DELETE",
+    }, token);
     if (!res.ok) throw new Error("Failed to delete product");
 }
 
@@ -264,11 +265,11 @@ export interface ProductImportResult {
 }
 
 export async function adminImportProducts(token: string, rows: ProductImportRow[]): Promise<ProductImportResult> {
-    const res = await fetch(`${BASE}/api/products/import`, {
+    const res = await authFetch(`${BASE}/api/products/import`, {
         method: "POST",
-        headers: authHeaders(token),
+        headers: JSON_HEADERS,
         body: JSON.stringify({ rows }),
-    });
+    }, token);
     if (!res.ok) throw new Error("Import failed");
     return res.json();
 }
@@ -284,30 +285,30 @@ export interface MeasurementUnit {
 }
 
 export async function adminGetMeasurementUnits(token: string): Promise<MeasurementUnit[]> {
-    const res = await fetch(`${BASE}/api/measurement-units`, { headers: authHeaders(token), cache: "no-store" });
+    const res = await authFetch(`${BASE}/api/measurement-units`, { cache: "no-store" }, token);
     if (!res.ok) throw new Error("Failed to fetch measurement units");
     return res.json();
 }
 
 export async function adminCreateMeasurementUnit(token: string, data: { name: string; symbol: string; measures: string }): Promise<{ id: string }> {
-    const res = await fetch(`${BASE}/api/measurement-units`, {
-        method: "POST", headers: authHeaders(token), body: JSON.stringify(data),
-    });
+    const res = await authFetch(`${BASE}/api/measurement-units`, {
+        method: "POST", headers: JSON_HEADERS, body: JSON.stringify(data),
+    }, token);
     if (!res.ok) throw new Error("Failed to create measurement unit");
     return res.json();
 }
 
 export async function adminUpdateMeasurementUnit(token: string, unitId: string, data: { name: string; symbol: string; measures: string }): Promise<void> {
-    const res = await fetch(`${BASE}/api/measurement-units/${unitId}`, {
-        method: "PUT", headers: authHeaders(token), body: JSON.stringify(data),
-    });
+    const res = await authFetch(`${BASE}/api/measurement-units/${unitId}`, {
+        method: "PUT", headers: JSON_HEADERS, body: JSON.stringify(data),
+    }, token);
     if (!res.ok) throw new Error("Failed to update measurement unit");
 }
 
 export async function adminDeleteMeasurementUnit(token: string, unitId: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/measurement-units/${unitId}`, {
-        method: "DELETE", headers: authHeaders(token),
-    });
+    const res = await authFetch(`${BASE}/api/measurement-units/${unitId}`, {
+        method: "DELETE",
+    }, token);
     if (!res.ok) throw new Error("Failed to delete measurement unit");
 }
 
@@ -315,11 +316,10 @@ export async function adminDeleteMeasurementUnit(token: string, unitId: string):
 export async function adminUploadImage(token: string, file: File): Promise<{ url: string }> {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch(`${BASE}/api/images/upload`, {
+    const res = await authFetch(`${BASE}/api/images/upload`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
-    });
+    }, token);
     if (!res.ok) throw new Error("Failed to upload image");
     return res.json();
 }
@@ -330,11 +330,13 @@ export interface VariantAttribute { name: string; value: string; unitId?: string
 export async function adminGetVariants(token: string, productId?: string) {
     const all: unknown[] = [];
     let page = 1;
+    let currentToken = token;
     while (true) {
         const params = new URLSearchParams({ pageSize: "100", page: String(page) });
         if (productId) params.set("productId", productId);
-        const res = await fetch(`${BASE}/api/variants?${params}`, { headers: authHeaders(token), cache: "no-store" });
+        const res = await authFetch(`${BASE}/api/variants?${params}`, { cache: "no-store" }, currentToken);
         if (!res.ok) throw new Error("Failed to fetch variants");
+        currentToken = localStorage.getItem("token") ?? currentToken;
         const data = await res.json();
         const items: unknown[] = data.items ?? [];
         all.push(...items);
@@ -348,9 +350,9 @@ export async function adminCreateVariant(token: string, data: {
     productId: string; sku: string; name: string; price: number; description: string;
     brand: string; quantity: number; variantAttributes: VariantAttribute[]; imageUrls: string[];
 }) {
-    const res = await fetch(`${BASE}/api/variants`, {
-        method: "POST", headers: authHeaders(token), body: JSON.stringify(data),
-    });
+    const res = await authFetch(`${BASE}/api/variants`, {
+        method: "POST", headers: JSON_HEADERS, body: JSON.stringify(data),
+    }, token);
     if (!res.ok) throw new Error("Failed to create variant");
     return res.json();
 }
@@ -359,35 +361,39 @@ export async function adminUpdateVariant(token: string, variantId: string, data:
     productId: string; sku: string; name: string; price: number; quantity: number;
     brand?: string; description?: string;
     variantAttributes: VariantAttribute[]; imageUrls: string[]; isActive: boolean;
-    discountedPrice?: number | null;
+    discountedPrice?: number | null; rowVersion?: string;
 }) {
-    const res = await fetch(`${BASE}/api/variants/${variantId}`, {
-        method: "PUT", headers: authHeaders(token), body: JSON.stringify({ ...data, variantId }),
-    });
+    const res = await authFetch(`${BASE}/api/variants/${variantId}`, {
+        method: "PUT", headers: JSON_HEADERS, body: JSON.stringify({ ...data, variantId }),
+    }, token);
+    if (res.status === 409) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.message ?? "Această variantă a fost modificată de altcineva, reîncarcă pagina.");
+    }
     if (!res.ok) throw new Error("Failed to update variant");
 }
 
 export async function adminDeleteVariant(token: string, variantId: string) {
-    const res = await fetch(`${BASE}/api/variants/${variantId}`, {
-        method: "DELETE", headers: authHeaders(token),
-    });
+    const res = await authFetch(`${BASE}/api/variants/${variantId}`, {
+        method: "DELETE",
+    }, token);
     if (!res.ok) throw new Error("Failed to delete variant");
 }
 
 export async function adminDeleteVariantsBatch(token: string, variantIds: string[]) {
-    const res = await fetch(`${BASE}/api/variants/batch`, {
-        method: "DELETE", headers: authHeaders(token),
+    const res = await authFetch(`${BASE}/api/variants/batch`, {
+        method: "DELETE", headers: JSON_HEADERS,
         body: JSON.stringify({ variantIds }),
-    });
+    }, token);
     if (!res.ok) throw new Error("Batch delete failed");
 }
 
 // ── B2B / Order Notes / KPIs / Partial Dispatch ──────────────────────────────
 
 export async function adminMarkB2BPaid(token: string, orderId: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/order/admin/${orderId}/b2b-paid`, {
-        method: "PUT", headers: authHeaders(token),
-    });
+    const res = await authFetch(`${BASE}/api/order/admin/${orderId}/b2b-paid`, {
+        method: "PUT",
+    }, token);
     if (!res.ok) throw new Error("Failed to mark B2B order as paid");
 }
 
@@ -399,18 +405,18 @@ export interface OrderNote {
 }
 
 export async function adminGetOrderNotes(token: string, orderId: string): Promise<OrderNote[]> {
-    const res = await fetch(`${BASE}/api/order/admin/${orderId}/notes`, {
-        headers: authHeaders(token), cache: "no-store",
-    });
+    const res = await authFetch(`${BASE}/api/order/admin/${orderId}/notes`, {
+        cache: "no-store",
+    }, token);
     if (!res.ok) throw new Error("Failed to fetch order notes");
     return res.json();
 }
 
 export async function adminAddOrderNote(token: string, orderId: string, text: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/order/admin/${orderId}/notes`, {
-        method: "POST", headers: authHeaders(token),
+    const res = await authFetch(`${BASE}/api/order/admin/${orderId}/notes`, {
+        method: "POST", headers: JSON_HEADERS,
         body: JSON.stringify({ text }),
-    });
+    }, token);
     if (!res.ok) throw new Error("Failed to add order note");
 }
 
@@ -421,9 +427,9 @@ export interface AdminKPIs {
 }
 
 export async function adminGetKPIs(token: string): Promise<AdminKPIs> {
-    const res = await fetch(`${BASE}/api/order/admin/kpis`, {
-        headers: authHeaders(token), cache: "no-store",
-    });
+    const res = await authFetch(`${BASE}/api/order/admin/kpis`, {
+        cache: "no-store",
+    }, token);
     if (!res.ok) throw new Error("Failed to fetch KPIs");
     return res.json();
 }
@@ -435,10 +441,10 @@ export async function adminPartialDispatch(
     awbNumber: string,
     carrierName: string,
 ): Promise<{ allDispatched: boolean }> {
-    const res = await fetch(`${BASE}/api/order/admin/${orderId}/partial-dispatch`, {
-        method: "PUT", headers: authHeaders(token),
+    const res = await authFetch(`${BASE}/api/order/admin/${orderId}/partial-dispatch`, {
+        method: "PUT", headers: JSON_HEADERS,
         body: JSON.stringify({ orderItemIds, awbNumber, carrierName }),
-    });
+    }, token);
     if (!res.ok) throw new Error("Failed to dispatch items");
     return res.json();
 }

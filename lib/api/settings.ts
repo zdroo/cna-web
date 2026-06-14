@@ -1,3 +1,5 @@
+import { authFetch } from "./http";
+
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export interface AboutPageSection {
@@ -25,13 +27,12 @@ export async function getAboutPage(): Promise<AboutPageContent> {
 }
 
 export async function setAboutPage(token: string, content: AboutPageContent): Promise<void> {
-    const res = await fetch(`${BASE}/api/settings/about-page`, {
+    const res = await authFetch(`${BASE}/api/settings/about-page`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ contentJson: JSON.stringify(content) }),
-    });
+    }, token);
     if (!res.ok) throw new Error("Nu s-a putut salva conținutul.");
 }

@@ -1,8 +1,6 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL;
+import { authFetch } from "./http";
 
-function authHeaders(token: string) {
-    return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-}
+const BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export type UserEventType =
     | "UserRegistered"
@@ -58,7 +56,7 @@ export async function getUserEvents(
     if (params.from) query.set("from", params.from);
     if (params.to) query.set("to", params.to);
 
-    const res = await fetch(`${BASE}/api/admin/user-events?${query}`, { headers: authHeaders(token) });
+    const res = await authFetch(`${BASE}/api/admin/user-events?${query}`, {}, token);
     if (!res.ok) throw new Error("Nu s-au putut încărca evenimentele.");
     return res.json();
 }
@@ -71,7 +69,7 @@ export async function getFunnel(
     const query = new URLSearchParams();
     if (from) query.set("from", from);
     if (to) query.set("to", to);
-    const res = await fetch(`${BASE}/api/admin/user-events/funnel?${query}`, { headers: authHeaders(token) });
+    const res = await authFetch(`${BASE}/api/admin/user-events/funnel?${query}`, {}, token);
     if (!res.ok) throw new Error("Nu s-a putut încărca funnel-ul.");
     return res.json();
 }

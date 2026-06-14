@@ -17,6 +17,7 @@ const NAV: NavItem[] = [
     { href: "/admin/comenzi", label: "Comenzi", icon: ShoppingCart },
     { href: "/admin/returns", label: "Retururi", icon: RotateCcw },
     { href: "/admin/statistici", label: "Statistici", icon: BarChart2 },
+    { href: "/admin/user-events", label: "Activitate", icon: Activity },
 ];
 
 const ADMIN_ONLY_NAV: NavItem[] = [
@@ -24,7 +25,6 @@ const ADMIN_ONLY_NAV: NavItem[] = [
     { href: "/admin/despre-noi", label: "Despre noi", icon: FileText },
     { href: "/admin/cupoane", label: "Cupoane", icon: Tag },
     { href: "/admin/carduri-cadou", label: "Carduri cadou", icon: Gift },
-    { href: "/admin/user-events", label: "Activitate", icon: Activity },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

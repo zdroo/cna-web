@@ -1,4 +1,5 @@
 import { CartItem } from "@/types/cart";
+import { authFetch } from "./http";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
@@ -124,11 +125,11 @@ export async function checkout(
     couponCode?: string,
     giftCardCode?: string
 ): Promise<{ orderId: string }> {
-    const res = await fetch(`${BASE}/api/cart/checkout`, {
+    const res = await authFetch(`${BASE}/api/cart/checkout`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shippingContactId, cartItemIds, isB2B, paymentMethod, couponCode, giftCardCode }),
-    });
+    }, token);
     if (!res.ok) {
         const json = await res.json().catch(() => null);
         throw new Error(json?.message || "Comanda nu a putut fi plasată");
@@ -137,10 +138,10 @@ export async function checkout(
 }
 
 export async function mergeSessionCart(token: string, sessionId: string): Promise<CartItem[]> {
-    const res = await fetch(`${BASE}/api/cart/merge?sessionId=${sessionId}`, {
+    const res = await authFetch(`${BASE}/api/cart/merge?sessionId=${sessionId}`, {
         method: "POST",
-        headers: buildHeaders(token),
-    });
+        headers: buildHeaders(),
+    }, token);
     if (!res.ok) return [];
     const data: CartApiResponse = await res.json();
     return mapItems(data);

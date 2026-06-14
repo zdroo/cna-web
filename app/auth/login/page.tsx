@@ -1,28 +1,58 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { resendConfirmationEmail } from "@/lib/api/auth";
 
-export default function LoginPage() {
+function LoginForm() {
     const { login, register, loginWithGoogle, user, isLoaded } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const registeredEmail = searchParams.get("registered");
     const [mode, setMode] = useState<"login" | "register">("login");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
     const [resendDone, setResendDone] = useState(false);
-    const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
+    const [resendCooldown, setResendCooldown] = useState(0);
 
     useEffect(() => {
         if (isLoaded && user) router.replace("/");
     }, [isLoaded, user, router]);
+
+    useEffect(() => {
+        if (resendCooldown <= 0) return;
+        const timer = setInterval(() => {
+            setResendCooldown((prev) => Math.max(0, prev - 1));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [resendCooldown > 0]);
+
+    function buildLoginUrl(extra: Record<string, string | null>) {
+        const params = new URLSearchParams(searchParams.toString());
+        for (const [key, value] of Object.entries(extra)) {
+            if (value === null) params.delete(key);
+            else params.set(key, value);
+        }
+        const qs = params.toString();
+        return qs ? `/auth/login?${qs}` : "/auth/login";
+    }
+
+    function backToLogin() {
+        setMode("login");
+        setResendDone(false);
+        setResendCooldown(0);
+        router.push(buildLoginUrl({ registered: null }));
+    }
 
     if (!isLoaded || user) return null;
 
@@ -55,7 +85,7 @@ export default function LoginPage() {
                 await login(email, password);
             } else {
                 await register(email, password);
-                setRegisteredEmail(email);
+                router.push(buildLoginUrl({ registered: email }));
                 return;
             }
         } catch (err: unknown) {
@@ -70,15 +100,21 @@ export default function LoginPage() {
         }
     }
 
-    async function handleResend() {
-        if (loading) return;
+    async function handleResend(targetEmail: string) {
+        if (loading || resendCooldown > 0) return;
         setResendDone(false);
         setLoading(true);
         try {
-            await resendConfirmationEmail(email);
+            await resendConfirmationEmail(targetEmail);
             setResendDone(true);
-        } catch {
-            setError("Nu s-a putut retrimite emailul de confirmare.");
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : "Nu s-a putut retrimite emailul de confirmare.";
+            const match = msg.match(/(\d+)\s*secunde/);
+            if (match) {
+                setResendCooldown(parseInt(match[1], 10));
+            } else {
+                setError(msg);
+            }
         } finally {
             setLoading(false);
         }
@@ -121,18 +157,22 @@ export default function LoginPage() {
                             Nu ai primit emailul?{" "}
                             {resendDone ? (
                                 <span className="text-green-600 dark:text-green-400 font-medium">Retrimis!</span>
+                            ) : resendCooldown > 0 ? (
+                                <span className="text-gray-400 dark:text-gray-500">
+                                    Poți retrimite peste {resendCooldown} secunde
+                                </span>
                             ) : (
                                 <button
                                     type="button"
-                                    onClick={async () => { await resendConfirmationEmail(registeredEmail); setResendDone(true); }}
-                                    className="font-semibold text-gray-700 dark:text-gray-300 hover:underline"
+                                    onClick={() => handleResend(registeredEmail)}
+                                    className="font-semibold text-gray-700 dark:text-gray-300 hover:underline cursor-pointer"
                                 >
                                     Retrimite
                                 </button>
                             )}
                         </p>
                         <button
-                            onClick={() => { setRegisteredEmail(null); setMode("login"); setResendDone(false); }}
+                            onClick={backToLogin}
                             className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                         >
                             Înapoi la autentificare
@@ -175,14 +215,25 @@ export default function LoginPage() {
                                         </Link>
                                     )}
                                 </div>
-                                <input
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-500 focus:border-transparent transition"
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        required
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 pr-11 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-500 focus:border-transparent transition"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((v) => !v)}
+                                        tabIndex={-1}
+                                        aria-label={showPassword ? "Ascunde parola" : "Afișează parola"}
+                                        className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
                                 {mode === "register" && password.length > 0 && (
                                     <ul className="flex flex-col gap-0.5 mt-1">
                                         {[
@@ -202,14 +253,32 @@ export default function LoginPage() {
                             {mode === "register" && (
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Confirmă parola</label>
-                                    <input
-                                        type="password"
-                                        required
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        className="border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-500 focus:border-transparent transition"
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            required
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            className={`w-full border rounded-xl px-4 py-2.5 pr-11 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                                                confirmPassword.length > 0 && confirmPassword !== password
+                                                    ? "border-red-400 dark:border-red-600 focus:ring-red-400 dark:focus:ring-red-600"
+                                                    : "border-gray-200 dark:border-gray-700 focus:ring-gray-900 dark:focus:ring-gray-500"
+                                            }`}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword((v) => !v)}
+                                            tabIndex={-1}
+                                            aria-label={showConfirmPassword ? "Ascunde parola" : "Afișează parola"}
+                                            className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                        >
+                                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+                                    {confirmPassword.length > 0 && confirmPassword !== password && (
+                                        <p className="text-xs text-red-500 dark:text-red-400">Parolele nu coincid</p>
+                                    )}
                                 </div>
                             )}
 
@@ -222,8 +291,10 @@ export default function LoginPage() {
                                     <p>Adresa de email nu a fost confirmată. Verifică inbox-ul.</p>
                                     {resendDone ? (
                                         <p className="font-medium text-green-700 dark:text-green-400">Email retrimis!</p>
+                                    ) : resendCooldown > 0 ? (
+                                        <p>Poți retrimite emailul de confirmare peste {resendCooldown} secunde.</p>
                                     ) : (
-                                        <button type="button" onClick={handleResend} className="text-left font-semibold underline hover:no-underline">
+                                        <button type="button" onClick={() => handleResend(email)} className="text-left font-semibold underline hover:no-underline cursor-pointer">
                                             Retrimite emailul de confirmare
                                         </button>
                                     )}
@@ -232,7 +303,7 @@ export default function LoginPage() {
 
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || (mode === "register" && confirmPassword !== password)}
                                 className="bg-gray-900 text-white py-2.5 rounded-xl font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1"
                             >
                                 {loading ? "Se procesează..." : mode === "login" ? "Intră în cont" : "Creează cont"}
@@ -269,5 +340,13 @@ export default function LoginPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense>
+            <LoginForm />
+        </Suspense>
     );
 }

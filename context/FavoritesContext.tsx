@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
-import { getFavorites, addFavorite, removeFavorite } from "@/lib/api/favorites";
+import { getFavorites, addFavorite, removeFavorite, mergeSessionFavorites } from "@/lib/api/favorites";
 import { useAuth } from "@/context/AuthContext";
 import { FavoriteItem } from "@/types/favorite";
 
@@ -45,8 +45,15 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         async function load() {
             try {
                 if (currentToken) {
-                    const data = await getFavorites(currentToken, undefined);
-                    applyItems(data);
+                    const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
+                    if (sessionId) {
+                        const data = await mergeSessionFavorites(currentToken, sessionId);
+                        localStorage.removeItem(GUEST_SESSION_KEY);
+                        applyItems(data);
+                    } else {
+                        const data = await getFavorites(currentToken, undefined);
+                        applyItems(data);
+                    }
                 } else {
                     applyItems([]);
                     const sessionId = getOrCreateSessionId();

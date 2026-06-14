@@ -66,7 +66,7 @@ export async function confirmEmail(token: string): Promise<void> {
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        throw new Error(error?.message ?? "Token invalid sau expirat.");
+        throw new Error(error?.message ?? "Link invalid sau expirat.");
     }
 }
 
@@ -105,7 +105,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        throw new Error(error?.message ?? "Token invalid sau expirat.");
+        throw new Error(error?.message ?? "Link invalid sau expirat.");
     }
 }
 

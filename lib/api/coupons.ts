@@ -1,3 +1,5 @@
+import { authFetch } from "./http";
+
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export interface CouponValidation {
@@ -35,9 +37,7 @@ export async function validateCoupon(code: string, orderTotal: number, token?: s
 }
 
 export async function adminGetCoupons(token: string): Promise<CouponItem[]> {
-    const res = await fetch(`${BASE}/api/coupons`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`${BASE}/api/coupons`, {}, token);
     if (!res.ok) throw new Error("Eroare la încărcarea cupoanelor");
     return res.json();
 }
@@ -51,11 +51,11 @@ export async function adminCreateCoupon(token: string, data: {
     maxUsesPerUser: number | null;
     expiresAt: string | null;
 }): Promise<void> {
-    const res = await fetch(`${BASE}/api/coupons`, {
+    const res = await authFetch(`${BASE}/api/coupons`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-    });
+    }, token);
     if (!res.ok) {
         const json = await res.json().catch(() => null);
         throw new Error(json?.message || "Nu s-a putut crea cuponul");
@@ -63,17 +63,15 @@ export async function adminCreateCoupon(token: string, data: {
 }
 
 export async function adminDeleteCoupon(token: string, couponId: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/coupons/${couponId}`, {
+    const res = await authFetch(`${BASE}/api/coupons/${couponId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    }, token);
     if (!res.ok) throw new Error("Nu s-a putut șterge cuponul");
 }
 
 export async function adminToggleCoupon(token: string, couponId: string): Promise<void> {
-    const res = await fetch(`${BASE}/api/coupons/${couponId}/toggle`, {
+    const res = await authFetch(`${BASE}/api/coupons/${couponId}/toggle`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    }, token);
     if (!res.ok) throw new Error("Nu s-a putut modifica starea cuponului");
 }

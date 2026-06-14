@@ -82,6 +82,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }, Math.max(0, remaining - 60_000));
     }
 
+    // Sync state when lib/api/http.ts silently refreshes or invalidates the session.
+    useEffect(() => {
+        function onRefreshed(e: Event) {
+            const detail = (e as CustomEvent<{ token: string; refreshToken: string }>).detail;
+            setToken(detail.token);
+            setUser(parseToken(detail.token));
+            scheduleRefresh(detail.token);
+        }
+
+        function onLogout() {
+            clearAuth();
+        }
+
+        window.addEventListener("auth:refreshed", onRefreshed);
+        window.addEventListener("auth:logout", onLogout);
+        return () => {
+            window.removeEventListener("auth:refreshed", onRefreshed);
+            window.removeEventListener("auth:logout", onLogout);
+        };
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     useEffect(() => {
         async function init() {
             const storedToken = localStorage.getItem("token");

@@ -1,3 +1,10 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Hide native browser password reveal/clear icons (Edge/IE) so they don't
+   overlap and intercept clicks on our custom show/hide password buttons. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
