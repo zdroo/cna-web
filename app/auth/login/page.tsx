@@ -22,6 +22,7 @@ function LoginForm() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+    const [googleAccountOnly, setGoogleAccountOnly] = useState(false);
     const [resendDone, setResendDone] = useState(false);
     const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -64,6 +65,7 @@ function LoginForm() {
         e.preventDefault();
         setError(null);
         setEmailNotConfirmed(false);
+        setGoogleAccountOnly(false);
         setResendDone(false);
         if (!isValidEmail(email)) {
             setError("Adresa de email nu este validă.");
@@ -92,6 +94,8 @@ function LoginForm() {
             const msg = err instanceof Error ? err.message : "A apărut o eroare";
             if (msg === "EMAIL_NOT_CONFIRMED") {
                 setEmailNotConfirmed(true);
+            } else if (msg === "GOOGLE_ACCOUNT_ONLY") {
+                setGoogleAccountOnly(true);
             } else {
                 setError(msg);
             }
@@ -298,6 +302,12 @@ function LoginForm() {
                                             Retrimite emailul de confirmare
                                         </button>
                                     )}
+                                </div>
+                            )}
+
+                            {googleAccountOnly && (
+                                <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3 text-sm text-blue-800 dark:text-blue-300">
+                                    Acest cont a fost creat cu Google. Folosește butonul &quot;Continuă cu Google&quot; de mai jos.
                                 </div>
                             )}
 
