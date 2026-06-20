@@ -124,7 +124,7 @@ export async function checkout(
     paymentMethod: "Stripe" | "NetPayment" = "Stripe",
     couponCode?: string,
     giftCardCode?: string
-): Promise<{ orderId: string }> {
+): Promise<{ orderId: string; amountDue: number }> {
     const res = await authFetch(`${BASE}/api/cart/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,7 +142,10 @@ export async function mergeSessionCart(token: string, sessionId: string): Promis
         method: "POST",
         headers: buildHeaders(),
     }, token);
-    if (!res.ok) return [];
+    if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.message || "Eroare la îmbinarea coșului de sesiune");
+    }
     const data: CartApiResponse = await res.json();
     return mapItems(data);
 }

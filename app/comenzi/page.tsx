@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import PageSpinner from "@/components/ui/PageSpinner";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -322,6 +322,7 @@ export default function ComenziPage() {
     const [error, setError] = useState<string | null>(null);
     const [returnOrder, setReturnOrder] = useState<Order | null>(null);
     const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
+    const returnSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const fetchOrders = useCallback(async (p: number) => {
         if (!token) return;
@@ -343,9 +344,13 @@ export default function ComenziPage() {
 
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user || !token) { router.replace("/auth/login"); return; }
+        if (!user) { router.replace("/auth/login"); return; }
         fetchOrders(page);
-    }, [isLoaded, user, token, router, fetchOrders, page]);
+    }, [isLoaded, user, fetchOrders, page, router]);
+
+    useEffect(() => {
+        return () => { if (returnSuccessTimerRef.current) clearTimeout(returnSuccessTimerRef.current); };
+    }, []);
 
     async function handleCancel(orderId: string) {
         if (!token) return;
@@ -377,7 +382,8 @@ export default function ComenziPage() {
         setReturnOrder(null);
         setError(null);
         setReturnSuccess("Cererea de retur a fost trimisă cu succes!");
-        setTimeout(() => setReturnSuccess(null), 5000);
+        if (returnSuccessTimerRef.current) clearTimeout(returnSuccessTimerRef.current);
+        returnSuccessTimerRef.current = setTimeout(() => setReturnSuccess(null), 5000);
         fetchOrders(page);
     }
 

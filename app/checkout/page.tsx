@@ -100,7 +100,6 @@ export default function CheckoutPage() {
             }
         }
 
-        const snapshotAmountDue = amountDue;
         setLoading(true);
         try {
             if (showNewForm || contacts.length === 0) {
@@ -113,7 +112,7 @@ export default function CheckoutPage() {
             }
 
             const cartItemIds = items.map((i) => i.cartItemId);
-            const { orderId } = await checkout(
+            const { orderId, amountDue: serverAmountDue } = await checkout(
                 token, contactId, cartItemIds, isB2B, paymentMethod,
                 appliedCoupon ?? undefined,
                 appliedGiftCard ?? undefined
@@ -122,7 +121,7 @@ export default function CheckoutPage() {
             clearCart();
             if (isB2B && paymentMethod === "NetPayment") {
                 router.push(`/comenzi`);
-            } else if (snapshotAmountDue <= 0) {
+            } else if (serverAmountDue <= 0) {
                 router.push(`/checkout/confirmation/${orderId}`);
             } else {
                 router.push(`/payment/${orderId}`);

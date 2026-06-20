@@ -36,7 +36,7 @@ function LoginForm() {
             setResendCooldown((prev) => Math.max(0, prev - 1));
         }, 1000);
         return () => clearInterval(timer);
-    }, [resendCooldown > 0]);
+    }, [resendCooldown]);
 
     function buildLoginUrl(extra: Record<string, string | null>) {
         const params = new URLSearchParams(searchParams.toString());

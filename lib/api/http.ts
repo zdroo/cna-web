@@ -13,6 +13,7 @@ async function performRefresh(): Promise<string | null> {
         window.dispatchEvent(new CustomEvent("auth:refreshed", { detail: res }));
         return res.token;
     } catch {
+        window.dispatchEvent(new Event("auth:logout"));
         return null;
     }
 }

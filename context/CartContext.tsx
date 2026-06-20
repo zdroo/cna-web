@@ -60,14 +60,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (user && token) {
             const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
             if (sessionId) {
-                // Merge guest session cart into user cart, then clear session
+                localStorage.removeItem(GUEST_SESSION_KEY);
                 mergeSessionCart(token, sessionId)
                     .then(setItems)
                     .catch(() => {
                         showError("Nu s-au putut transfera articolele din coș.");
                         return getCart(token, null).then(setItems).catch(console.error);
-                    })
-                    .finally(() => localStorage.removeItem(GUEST_SESSION_KEY));
+                    });
             } else {
                 getCart(token, null).then(setItems).catch(console.error);
             }
@@ -151,18 +150,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [user, token]);
 
     const clearCart = useCallback(() => {
-        setItems((prev) => {
-            const previous = prev;
-            const revert = () => setItems(previous);
-            if (user && token) {
-                clearCartApi(token, null).catch(() => { console.error("clearCart failed"); revert(); });
-            } else {
-                const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
-                if (sessionId) clearCartApi(null, sessionId).catch(() => { console.error("clearCart failed"); revert(); });
+        const previous = items;
+        setItems([]);
+        if (user && token) {
+            clearCartApi(token, null).catch(() => {
+                console.error("clearCart failed");
+                setItems(previous);
+            });
+        } else {
+            const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
+            if (sessionId) {
+                clearCartApi(null, sessionId).catch(() => {
+                    console.error("clearCart failed");
+                    setItems(previous);
+                });
             }
-            return [];
-        });
-    }, [user, token]);
+        }
+    }, [user, token, items]);
 
     const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
     const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);

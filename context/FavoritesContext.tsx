@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 import { getFavorites, addFavorite, removeFavorite, mergeSessionFavorites } from "@/lib/api/favorites";
 import { useAuth } from "@/context/AuthContext";
 import { FavoriteItem } from "@/types/favorite";
@@ -31,6 +31,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     const [favorites, setFavorites] = useState<Map<string, string>>(new Map());
     const [items, setItems] = useState<FavoriteItem[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
+    const inFlightRef = useRef<Set<string>>(new Set());
 
     function applyItems(data: FavoriteItem[]) {
         setItems(data);
@@ -47,8 +48,8 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
                 if (currentToken) {
                     const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
                     if (sessionId) {
-                        const data = await mergeSessionFavorites(currentToken, sessionId);
                         localStorage.removeItem(GUEST_SESSION_KEY);
+                        const data = await mergeSessionFavorites(currentToken, sessionId);
                         applyItems(data);
                     } else {
                         const data = await getFavorites(currentToken, undefined);
@@ -68,28 +69,30 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         }
 
         load();
-    }, [authLoaded, token]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [authLoaded, user?.userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const toggle = useCallback(
         async (variantId: string) => {
-            const existingId = favorites.get(variantId);
-            if (existingId) {
-                const sessionId = token ? undefined : getOrCreateSessionId();
-                await removeFavorite(existingId, token ?? undefined, sessionId);
-                setFavorites((prev) => { const m = new Map(prev); m.delete(variantId); return m; });
-                setItems((prev) => prev.filter((i) => i.productVariantId !== variantId));
-            } else {
-                const sessionId = token ? undefined : getOrCreateSessionId();
-                const favoriteItemId = await addFavorite(
-                    variantId,
-                    token ?? undefined,
-                    sessionId
-                );
-                setFavorites((prev) => new Map(prev).set(variantId, favoriteItemId));
-                const updated = token
-                    ? await getFavorites(token, undefined)
-                    : await getFavorites(undefined, sessionId);
-                applyItems(updated);
+            if (inFlightRef.current.has(variantId)) return;
+            inFlightRef.current.add(variantId);
+            try {
+                const existingId = favorites.get(variantId);
+                if (existingId) {
+                    const sessionId = token ? undefined : getOrCreateSessionId();
+                    await removeFavorite(existingId, token ?? undefined, sessionId);
+                    setFavorites((prev) => { const m = new Map(prev); m.delete(variantId); return m; });
+                    setItems((prev) => prev.filter((i) => i.productVariantId !== variantId));
+                } else {
+                    const sessionId = token ? undefined : getOrCreateSessionId();
+                    const favoriteItemId = await addFavorite(variantId, token ?? undefined, sessionId);
+                    setFavorites((prev) => new Map(prev).set(variantId, favoriteItemId));
+                    const updated = token
+                        ? await getFavorites(token, undefined)
+                        : await getFavorites(undefined, sessionId);
+                    applyItems(updated);
+                }
+            } finally {
+                inFlightRef.current.delete(variantId);
             }
         },
         [favorites, token]

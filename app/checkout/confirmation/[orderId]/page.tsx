@@ -28,7 +28,7 @@ export default function ConfirmationPage() {
             .finally(() => setLoading(false));
     }, [isLoaded, user, token, orderId, router]);
 
-    if (!isLoaded || !user) return null;
+    if (!isLoaded || !user || !orderId) return null;
 
     return (
         <div className="max-w-lg mx-auto py-16 flex flex-col gap-8">

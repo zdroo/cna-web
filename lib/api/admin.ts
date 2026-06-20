@@ -336,7 +336,6 @@ export async function adminGetVariants(token: string, productId?: string) {
         if (productId) params.set("productId", productId);
         const res = await authFetch(`${BASE}/api/variants?${params}`, { cache: "no-store" }, currentToken);
         if (!res.ok) throw new Error("Failed to fetch variants");
-        currentToken = localStorage.getItem("token") ?? currentToken;
         const data = await res.json();
         const items: unknown[] = data.items ?? [];
         all.push(...items);

@@ -270,10 +270,12 @@ function InputField({
     type?: string;
     required?: boolean;
 }) {
+    const id = label.toLowerCase().replace(/\s+/g, "-");
     return (
         <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</label>
+            <label htmlFor={id} className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</label>
             <input
+                id={id}
                 type={type}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}

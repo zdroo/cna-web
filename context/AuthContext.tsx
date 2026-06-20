@@ -47,12 +47,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const router = useRouter();
     const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Refs that always point to the latest function versions. The event listeners
+    // and the setTimeout callback in scheduleRefresh read from these so they never
+    // hold stale closures even if AuthProvider re-renders between registration and firing.
+    const applyAuthRef = useRef<(newToken: string, newRefresh: string) => void>(null!);
+    const clearAuthRef = useRef<() => void>(null!);
+    const scheduleRefreshRef = useRef<(currentToken: string) => void>(null!);
+
     function applyAuth(newToken: string, newRefresh: string) {
         localStorage.setItem("token", newToken);
         localStorage.setItem("refreshToken", newRefresh);
         setToken(newToken);
         setUser(parseToken(newToken));
-        scheduleRefresh(newToken);
+        scheduleRefreshRef.current(newToken);
     }
 
     function clearAuth() {
@@ -75,12 +82,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (!stored) return;
             try {
                 const res = await apiRefresh(stored);
-                applyAuth(res.token, res.refreshToken);
+                applyAuthRef.current(res.token, res.refreshToken);
             } catch {
-                clearAuth();
+                clearAuthRef.current();
             }
         }, Math.max(0, remaining - 60_000));
     }
+
+    // Keep refs current on every render so callbacks never capture stale versions.
+    applyAuthRef.current = applyAuth;
+    clearAuthRef.current = clearAuth;
+    scheduleRefreshRef.current = scheduleRefresh;
 
     // Sync state when lib/api/http.ts silently refreshes or invalidates the session.
     useEffect(() => {
@@ -88,11 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const detail = (e as CustomEvent<{ token: string; refreshToken: string }>).detail;
             setToken(detail.token);
             setUser(parseToken(detail.token));
-            scheduleRefresh(detail.token);
+            scheduleRefreshRef.current(detail.token);
         }
 
         function onLogout() {
-            clearAuth();
+            clearAuthRef.current();
         }
 
         window.addEventListener("auth:refreshed", onRefreshed);
@@ -101,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             window.removeEventListener("auth:refreshed", onRefreshed);
             window.removeEventListener("auth:logout", onLogout);
         };
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         async function init() {
@@ -112,14 +124,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Token still valid — use it and schedule next refresh.
                 setToken(storedToken);
                 setUser(parseToken(storedToken));
-                scheduleRefresh(storedToken);
+                scheduleRefreshRef.current(storedToken);
             } else if (storedRefresh) {
                 // Token expired (or missing) but refresh token exists — renew silently.
                 try {
                     const res = await apiRefresh(storedRefresh);
-                    applyAuth(res.token, res.refreshToken);
+                    applyAuthRef.current(res.token, res.refreshToken);
                 } catch {
-                    clearAuth();
+                    clearAuthRef.current();
                 }
             }
 
@@ -131,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => {
             if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
         };
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     function safeRedirect(): string {
         const redirect = new URLSearchParams(window.location.search).get("redirect");
@@ -140,26 +152,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = useCallback(async (email: string, password: string) => {
         const res = await apiLogin(email, password);
-        applyAuth(res.token, res.refreshToken);
+        applyAuthRef.current(res.token, res.refreshToken);
         router.push(safeRedirect());
-    }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [router]);
 
     const loginWithGoogle = useCallback(async (idToken: string) => {
         const res = await apiGoogleLogin(idToken);
-        applyAuth(res.token, res.refreshToken);
+        applyAuthRef.current(res.token, res.refreshToken);
         router.push(safeRedirect());
-    }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [router]);
 
     const register = useCallback(async (email: string, password: string) => {
         await apiRegister(email, password);
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     const logout = useCallback(() => {
         const storedRefresh = localStorage.getItem("refreshToken");
         if (storedRefresh) apiLogout(storedRefresh);
-        clearAuth();
+        clearAuthRef.current();
         router.push("/");
-    }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [router]);
 
     return (
         <AuthContext.Provider value={{ user, token, isLoaded, login, register, loginWithGoogle, logout }}>
