@@ -29,6 +29,9 @@ export interface OrderItem {
     variantSlug: string;
     productSlug: string;
     isReturnable: boolean;
+    dispatchedAt?: string | null;
+    itemAwbNumber?: string | null;
+    itemCarrierName?: string | null;
 }
 
 export interface CompanyOrderSnapshot {
