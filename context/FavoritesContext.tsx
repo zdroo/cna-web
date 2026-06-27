@@ -15,12 +15,15 @@ interface FavoritesContextType {
 
 const FavoritesContext = createContext<FavoritesContextType | null>(null);
 
-const GUEST_SESSION_KEY = "guestSessionId";
+const GUEST_SESSION_KEY = "guestFavoritesSessionId";
 
 function getOrCreateSessionId(): string {
     let id = localStorage.getItem(GUEST_SESSION_KEY);
     if (!id) {
-        id = crypto.randomUUID();
+        // Fall back to the shared cart session ID so a user who added favorites
+        // as a guest (before this key existed) still gets them merged on first login.
+        const cartId = localStorage.getItem("guestSessionId");
+        id = cartId ?? crypto.randomUUID();
         localStorage.setItem(GUEST_SESSION_KEY, id);
     }
     return id;

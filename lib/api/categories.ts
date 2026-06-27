@@ -5,7 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getCategories(): Promise<Category[]> {
     const response = await fetch(`${API_URL}/api/categories`, {
-        next: { revalidate: 3600 }
+        cache: "no-store"
     });
 
     if (!response.ok)
@@ -17,12 +17,12 @@ export async function getCategories(): Promise<Category[]> {
 export async function getCategoriesWithProducts(): Promise<CategoryWithProducts[]> {
     const categories = await getCategories();
 
-    const productsPerCategory = await Promise.all(
+    const results = await Promise.allSettled(
         categories.map((cat) => getProducts(cat.slug))
     );
 
     return categories.map((cat, i) => ({
         ...cat,
-        products: productsPerCategory[i],
+        products: results[i].status === "fulfilled" ? results[i].value : [],
     }));
 }
