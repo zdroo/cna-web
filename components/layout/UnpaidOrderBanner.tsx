@@ -15,7 +15,7 @@ export default function UnpaidOrderBanner() {
     useEffect(() => {
         if (!isLoaded || !user || !token || user.role === "Admin" || user.role === "Seller") return;
 
-        getOrders(token, 1, 200)
+        getOrders(token, 1, 10)
             .then((result) => {
                 const pending = result.items.find((o) => !o.isPaid && o.status !== "Cancelled");
                 setUnpaidOrder(pending ?? null);

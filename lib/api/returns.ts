@@ -69,6 +69,7 @@ export interface AdminReturnRequest extends ReturnRequest {
 export interface AdminReturnPagedResult {
     items: AdminReturnRequest[];
     totalCount: number;
+    totalPages: number;
     page: number;
     pageSize: number;
 }

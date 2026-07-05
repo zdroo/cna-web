@@ -30,7 +30,7 @@ export default function ReviewForm({ variantId, existingReviews }: Props) {
 
     useEffect(() => {
         if (!user || !token || alreadyReviewed) return;
-        checkCanReview(token, variantId).then(setCanReview);
+        checkCanReview(token, variantId).then(setCanReview).catch(() => setCanReview(false));
     }, [user, token, variantId, alreadyReviewed]);
 
     async function handleSubmit(e: React.FormEvent) {

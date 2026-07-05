@@ -51,9 +51,16 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
                 if (currentToken) {
                     const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
                     if (sessionId) {
-                        localStorage.removeItem(GUEST_SESSION_KEY);
-                        const data = await mergeSessionFavorites(currentToken, sessionId);
-                        applyItems(data);
+                        try {
+                            const data = await mergeSessionFavorites(currentToken, sessionId);
+                            localStorage.removeItem(GUEST_SESSION_KEY);
+                            applyItems(data);
+                        } catch {
+                            // Merge failed — keep the guest session key and show guest favorites
+                            // so nothing is permanently lost if the server is momentarily unavailable.
+                            const data = await getFavorites(undefined, sessionId);
+                            applyItems(data);
+                        }
                     } else {
                         const data = await getFavorites(currentToken, undefined);
                         applyItems(data);

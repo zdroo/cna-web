@@ -20,6 +20,7 @@ export default function ReviewList({ reviews: initial }: Props) {
     const [editRating, setEditRating] = useState(0);
     const [editComment, setEditComment] = useState("");
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     function startEdit(r: Review) {
         setEditingId(r.reviewId);
@@ -30,14 +31,16 @@ export default function ReviewList({ reviews: initial }: Props) {
     async function handleSave(reviewId: string) {
         if (!token) return;
         setSaving(true);
+        setError(null);
         try {
             await updateReview(token, reviewId, editRating, editComment);
             setReviews((prev) => prev.map((r) =>
                 r.reviewId === reviewId ? { ...r, rating: editRating, comment: editComment } : r
             ));
             setEditingId(null);
+            router.refresh();
         } catch (err) {
-            alert((err as Error).message);
+            setError(err instanceof Error ? err.message : "Eroare la salvarea recenziei");
         } finally {
             setSaving(false);
         }
@@ -46,12 +49,13 @@ export default function ReviewList({ reviews: initial }: Props) {
     async function handleDelete(reviewId: string) {
         if (!token) return;
         if (!window.confirm("Ești sigur că vrei să ștergi această recenzie?")) return;
+        setError(null);
         try {
             await deleteReview(token, reviewId);
             setReviews((prev) => prev.filter((r) => r.reviewId !== reviewId));
             router.refresh();
         } catch (err) {
-            alert((err as Error).message);
+            setError(err instanceof Error ? err.message : "Eroare la ștergerea recenziei");
         }
     }
 
@@ -65,6 +69,9 @@ export default function ReviewList({ reviews: initial }: Props) {
 
     return (
         <div className="flex flex-col gap-4">
+            {error && (
+                <p className="text-sm text-red-500 dark:text-red-400 px-1">{error}</p>
+            )}
             {reviews.map((review) => {
                 const isOwn = user?.userId === review.userId;
                 const isEditing = editingId === review.reviewId;

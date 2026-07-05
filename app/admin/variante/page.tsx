@@ -35,6 +35,7 @@ interface Variant {
     variantSlug: string;
     imageUrls: string[];
     attributes?: Record<string, string>;
+    editableAttributes?: { name: string; value: string; unitId?: string | null }[];
     rowVersion?: string;
 }
 
@@ -496,7 +497,9 @@ export default function AdminVariantePage() {
             quantity: String(variant.stockQuantity),
             brand: variant.brand ?? "",
             description: variant.description ?? "",
-            attributes: Object.entries(variant.attributes ?? {}).map(([name, value]) => ({ name, value, unitId: undefined })),
+            attributes: variant.editableAttributes
+                ? variant.editableAttributes.map((a) => ({ name: a.name, value: a.value, unitId: a.unitId ?? undefined }))
+                : Object.entries(variant.attributes ?? {}).map(([name, value]) => ({ name, value, unitId: undefined })),
             imageUrls: variant.imageUrls ?? [],
             isActive: variant.isActive,
         });
@@ -680,6 +683,12 @@ export default function AdminVariantePage() {
                     </div>
                 )}
             </div>
+
+            {!showForm && error && (
+                <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                    {error}
+                </p>
+            )}
 
             {showForm && (
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">

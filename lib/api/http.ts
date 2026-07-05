@@ -27,7 +27,11 @@ function getRefreshedToken(): Promise<string | null> {
     return refreshPromise;
 }
 
+let sessionExpiredFired = false;
+
 function handleSessionExpired() {
+    if (sessionExpiredFired) return;
+    sessionExpiredFired = true;
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
     window.dispatchEvent(new Event("auth:logout"));

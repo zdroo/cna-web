@@ -60,9 +60,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (user && token) {
             const sessionId = localStorage.getItem(GUEST_SESSION_KEY);
             if (sessionId) {
-                localStorage.removeItem(GUEST_SESSION_KEY);
                 mergeSessionCart(token, sessionId)
-                    .then(setItems)
+                    .then((merged) => { localStorage.removeItem(GUEST_SESSION_KEY); setItems(merged); })
                     .catch(() => {
                         showError("Nu s-au putut transfera articolele din coș.");
                         return getCart(token, null).then(setItems).catch(console.error);

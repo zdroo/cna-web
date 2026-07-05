@@ -26,6 +26,7 @@ export default function AdminUsersPage() {
     const [search, setSearch] = useState("");
     const [inputValue, setInputValue] = useState("");
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
@@ -34,6 +35,7 @@ export default function AdminUsersPage() {
         if (!token) return;
         let cancelled = false;
         setLoading(true);
+        setLoadError(false);
         getUsers(token, page, 20, search || undefined)
             .then((data) => {
                 if (cancelled) return;
@@ -41,7 +43,7 @@ export default function AdminUsersPage() {
                 setTotalPages(data.totalPages);
                 setTotalCount(data.totalCount);
             })
-            .catch(console.error)
+            .catch(() => { if (!cancelled) setLoadError(true); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [token, page, search]);
@@ -105,6 +107,12 @@ export default function AdminUsersPage() {
                                 <tr>
                                     <td colSpan={5} className="text-center py-12">
                                         <Loader2 size={24} className="animate-spin text-gray-400 mx-auto" />
+                                    </td>
+                                </tr>
+                            ) : loadError ? (
+                                <tr>
+                                    <td colSpan={5} className="text-center py-12 text-red-500 dark:text-red-400">
+                                        Nu s-au putut încărca utilizatorii. Reîncarcă pagina.
                                     </td>
                                 </tr>
                             ) : items.length === 0 ? (

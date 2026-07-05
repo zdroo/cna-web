@@ -390,8 +390,8 @@ export default function ComenziPage() {
     if (!isLoaded || !user || !token) return null;
 
     const isWithin30Days = (order: Order) => {
-        const placed = new Date(order.createdAt).getTime();
-        return Date.now() - placed <= 30 * 24 * 60 * 60 * 1000;
+        if (!order.deliveredAt) return false;
+        return Date.now() - new Date(order.deliveredAt).getTime() <= 30 * 24 * 60 * 60 * 1000;
     };
 
     const canCancel = (order: Order) => STATUS_ORDER[order.status] < STATUS_ORDER["Shipped"];

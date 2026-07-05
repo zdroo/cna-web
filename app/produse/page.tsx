@@ -498,6 +498,7 @@ function ProduseContent() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const [loading, setLoading]       = useState(true);
+    const [fetchError, setFetchError] = useState(false);
     const [filterOpen, setFilterOpen] = useState(false);
     const [sortOpen, setSortOpen]     = useState(false);
     const sortRef = useRef<HTMLDivElement>(null);
@@ -558,6 +559,7 @@ function ProduseContent() {
 
         let cancelled = false;
         setLoading(true);
+        setFetchError(false);
         getVariantsFiltered({
             categoryId:     selectedCategoryId || undefined,
             productId:      selectedProductId  || undefined,
@@ -579,6 +581,7 @@ function ProduseContent() {
                     setTotalCount(data.totalCount);
                 }
             })
+            .catch(() => { if (!cancelled) setFetchError(true); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [categorySlug, selectedCategoryId, selectedProductSlug, selectedProductId, onlyInStock, onlyDiscounted, search, sortBy, minPrice, maxPrice, page]);
@@ -795,6 +798,11 @@ function ProduseContent() {
             {/* Grid */}
             {loading ? (
                 <PageSpinner />
+            ) : fetchError ? (
+                <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+                    <p className="text-lg font-medium">Nu s-au putut încărca produsele.</p>
+                    <p className="text-sm mt-1">Reîncarcă pagina sau încearcă mai târziu.</p>
+                </div>
             ) : displayed.length > 0 ? (
                 <>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

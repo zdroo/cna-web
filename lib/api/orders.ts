@@ -55,6 +55,7 @@ export interface Order {
     items: OrderItem[];
     isPaid: boolean;
     createdAt: string;
+    deliveredAt?: string | null;
     awbNumber?: string;
     carrierName?: string;
     trackingUrl?: string;
