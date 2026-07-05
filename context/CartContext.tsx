@@ -28,7 +28,7 @@ interface CartContextType {
     items: CartItem[];
     totalItems: number;
     totalPrice: number;
-    addItem: (payload: AddItemPayload) => void;
+    addItem: (payload: AddItemPayload) => Promise<void>;
     removeItem: (cartItemId: string) => void;
     updateQuantity: (cartItemId: string, quantity: number) => void;
     clearCart: () => void;
@@ -89,22 +89,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
         errorTimer.current = setTimeout(() => setErrorMessage(null), 3500);
     }, []);
 
-    const addItem = useCallback((payload: AddItemPayload) => {
-        const onError = (err: unknown) => {
-            console.error(err);
-            showError(err instanceof Error ? err.message : "Nu s-a putut adăuga în coș.");
-        };
+    const addItem = useCallback(async (payload: AddItemPayload): Promise<void> => {
         if (user && token) {
-            apiAddToCart(token, null, payload.variantId)
-                .then((updated) => { setItems(updated); showToast(); })
-                .catch(onError);
+            const updated = await apiAddToCart(token, null, payload.variantId);
+            setItems(updated);
+            showToast();
         } else {
             const sessionId = getOrCreateSessionId();
-            apiAddToCart(null, sessionId, payload.variantId)
-                .then((updated) => { setItems(updated); showToast(); })
-                .catch(onError);
+            const updated = await apiAddToCart(null, sessionId, payload.variantId);
+            setItems(updated);
+            showToast();
         }
-    }, [user, token, showToast, showError]);
+    }, [user, token, showToast]);
 
     const removeItem = useCallback((cartItemId: string) => {
         if (user && token) {

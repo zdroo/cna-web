@@ -323,14 +323,17 @@ export default function ComenziPage() {
     const [returnOrder, setReturnOrder] = useState<Order | null>(null);
     const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
     const returnSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const tokenRef = useRef(token);
+    useEffect(() => { tokenRef.current = token; }, [token]);
 
     const fetchOrders = useCallback(async (p: number) => {
-        if (!token) return;
+        const t = tokenRef.current;
+        if (!t) return;
         setLoading(true);
         try {
             const [data, returns] = await Promise.all([
-                getOrders(token, p),
-                getUserReturnRequests(token),
+                getOrders(t, p),
+                getUserReturnRequests(t),
             ]);
             setOrders(data.items);
             setTotalPages(data.totalPages);
@@ -340,7 +343,8 @@ export default function ComenziPage() {
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (!isLoaded) return;

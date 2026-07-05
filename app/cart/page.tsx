@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft } from "lucide-react";
+import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -11,6 +12,7 @@ export default function CartPage() {
     const { items, totalItems, totalPrice, removeItem, updateQuantity, clearCart } = useCart();
     const { user } = useAuth();
     const router = useRouter();
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
 
     function handleCheckout() {
         if (!user) {
@@ -53,12 +55,30 @@ export default function CartPage() {
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Coș</h1>
                     <span className="text-gray-400 text-sm mt-1">({totalItems} produse)</span>
                 </div>
-                <button
-                    onClick={() => { if (window.confirm("Golești tot coșul?")) clearCart(); }}
-                    className="text-sm text-gray-400 hover:text-red-500 transition-colors"
-                >
-                    Golește coșul
-                </button>
+                {showClearConfirm ? (
+                    <div className="flex items-center gap-2 text-sm">
+                        <span className="text-gray-600 dark:text-gray-300">Golești tot coșul?</span>
+                        <button
+                            onClick={() => { clearCart(); setShowClearConfirm(false); }}
+                            className="text-red-500 hover:text-red-600 font-medium transition-colors"
+                        >
+                            Da
+                        </button>
+                        <button
+                            onClick={() => setShowClearConfirm(false)}
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                        >
+                            Nu
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        onClick={() => setShowClearConfirm(true)}
+                        className="text-sm text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                        Golește coșul
+                    </button>
+                )}
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -125,7 +145,7 @@ export default function CartPage() {
                                     </button>
                                 </div>
 
-                                <p className="font-bold text-gray-900">
+                                <p className="font-bold text-gray-900 dark:text-gray-100">
                                     {(item.price * item.quantity).toFixed(2)} lei
                                 </p>
                             </div>

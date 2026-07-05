@@ -50,16 +50,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Refs that always point to the latest function versions. The event listeners
     // and the setTimeout callback in scheduleRefresh read from these so they never
     // hold stale closures even if AuthProvider re-renders between registration and firing.
-    const applyAuthRef = useRef<(newToken: string, newRefresh: string) => void>(null!);
-    const clearAuthRef = useRef<() => void>(null!);
-    const scheduleRefreshRef = useRef<(currentToken: string) => void>(null!);
+    const applyAuthRef = useRef<((newToken: string, newRefresh: string) => void) | null>(null);
+    const clearAuthRef = useRef<(() => void) | null>(null);
+    const scheduleRefreshRef = useRef<((currentToken: string) => void) | null>(null);
 
     function applyAuth(newToken: string, newRefresh: string) {
         localStorage.setItem("token", newToken);
         localStorage.setItem("refreshToken", newRefresh);
         setToken(newToken);
         setUser(parseToken(newToken));
-        scheduleRefreshRef.current(newToken);
+        scheduleRefreshRef.current?.(newToken);
     }
 
     function clearAuth() {
@@ -82,9 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (!stored) return;
             try {
                 const res = await apiRefresh(stored);
-                applyAuthRef.current(res.token, res.refreshToken);
+                applyAuthRef.current?.(res.token, res.refreshToken);
             } catch {
-                clearAuthRef.current();
+                clearAuthRef.current?.();
             }
         }, Math.max(0, remaining - 60_000));
     }
@@ -100,11 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const detail = (e as CustomEvent<{ token: string; refreshToken: string }>).detail;
             setToken(detail.token);
             setUser(parseToken(detail.token));
-            scheduleRefreshRef.current(detail.token);
+            scheduleRefreshRef.current?.(detail.token);
         }
 
         function onLogout() {
-            clearAuthRef.current();
+            clearAuthRef.current?.();
         }
 
         window.addEventListener("auth:refreshed", onRefreshed);
@@ -124,14 +124,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Token still valid — use it and schedule next refresh.
                 setToken(storedToken);
                 setUser(parseToken(storedToken));
-                scheduleRefreshRef.current(storedToken);
+                scheduleRefreshRef.current?.(storedToken);
             } else if (storedRefresh) {
                 // Token expired (or missing) but refresh token exists — renew silently.
                 try {
                     const res = await apiRefresh(storedRefresh);
-                    applyAuthRef.current(res.token, res.refreshToken);
+                    applyAuthRef.current?.(res.token, res.refreshToken);
                 } catch {
-                    clearAuthRef.current();
+                    clearAuthRef.current?.();
                 }
             }
 
@@ -152,13 +152,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = useCallback(async (email: string, password: string) => {
         const res = await apiLogin(email, password);
-        applyAuthRef.current(res.token, res.refreshToken);
+        applyAuthRef.current?.(res.token, res.refreshToken);
         router.push(safeRedirect());
     }, [router]);
 
     const loginWithGoogle = useCallback(async (idToken: string) => {
         const res = await apiGoogleLogin(idToken);
-        applyAuthRef.current(res.token, res.refreshToken);
+        applyAuthRef.current?.(res.token, res.refreshToken);
         router.push(safeRedirect());
     }, [router]);
 
@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = useCallback(() => {
         const storedRefresh = localStorage.getItem("refreshToken");
         if (storedRefresh) apiLogout(storedRefresh);
-        clearAuthRef.current();
+        clearAuthRef.current?.();
         router.push("/");
     }, [router]);
 

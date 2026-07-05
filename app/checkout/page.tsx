@@ -35,6 +35,8 @@ export default function CheckoutPage() {
     const { user, token, isLoaded } = useAuth();
 
     const submittedRef = useRef(false);
+    const tokenRef = useRef(token);
+    useEffect(() => { tokenRef.current = token; }, [token]);
     const [contacts, setContacts] = useState<ShippingContact[]>([]);
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [showNewForm, setShowNewForm] = useState(false);
@@ -58,10 +60,11 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user || !token) { router.replace("/auth/login?redirect=/checkout"); return; }
+        const t = tokenRef.current;
+        if (!user || !t) { router.replace("/auth/login?redirect=/checkout"); return; }
         if (items.length === 0 && !submittedRef.current) { router.replace("/cart"); return; }
 
-        getShippingContacts(token)
+        getShippingContacts(t)
             .then((list) => {
                 setContacts(list);
                 if (list.length === 0) setShowNewForm(true);
@@ -72,8 +75,10 @@ export default function CheckoutPage() {
                 setShowNewForm(true);
             });
 
-        getCompanyProfile(token).then(setCompanyProfile).catch(() => {});
-    }, [isLoaded, user, items.length, token, router]);
+        getCompanyProfile(t).then(setCompanyProfile).catch(() => {});
+    // tokenRef is a ref — intentionally excluded from deps to prevent re-running on silent refresh
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoaded, user, items.length, router]);
 
     if (!isLoaded || !user || (items.length === 0 && !submittedRef.current)) return null;
 
@@ -151,10 +156,23 @@ export default function CheckoutPage() {
         }
     }
 
-    function removeCoupon() {
+    async function removeCoupon() {
         setCouponInput("");
         setCouponResult(null);
         setAppliedCoupon(null);
+        // Re-validate the gift card against the new total (coupon discount no longer applies).
+        if (appliedGiftCard) {
+            setGiftCardLoading(true);
+            try {
+                const result = await validateGiftCard(appliedGiftCard, totalPrice);
+                setGiftCardResult(result);
+                if (!result.isValid) { setAppliedGiftCard(null); setGiftCardInput(""); }
+            } catch {
+                setGiftCardResult({ isValid: false, errorMessage: "Eroare la validare", deduction: 0, balance: 0 });
+            } finally {
+                setGiftCardLoading(false);
+            }
+        }
     }
 
     async function applyGiftCard() {

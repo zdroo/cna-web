@@ -9,21 +9,27 @@ import FavoriteButton from "./FavoriteButton";
 export default function AddToCartButton({ variant }: { variant: ProductVariantDetail }) {
     const { addItem } = useCart();
     const [added, setAdded] = useState(false);
+    const [addError, setAddError] = useState<string | null>(null);
     const isOutOfStock = variant.stockQuantity === 0;
 
-    function handleAdd() {
-        addItem({
-            variantId: variant.variantId,
-            variantSlug: variant.variantSlug,
-            productSlug: variant.productSlug,
-            name: variant.name,
-            brand: variant.brand,
-            price: variant.price,
-            primaryImageUrl: variant.primaryImageUrl,
-            stockQuantity: variant.stockQuantity,
-        });
-        setAdded(true);
-        setTimeout(() => setAdded(false), 2000);
+    async function handleAdd() {
+        setAddError(null);
+        try {
+            await addItem({
+                variantId: variant.variantId,
+                variantSlug: variant.variantSlug,
+                productSlug: variant.productSlug,
+                name: variant.name,
+                brand: variant.brand,
+                price: variant.price,
+                primaryImageUrl: variant.primaryImageUrl,
+                stockQuantity: variant.stockQuantity,
+            });
+            setAdded(true);
+            setTimeout(() => setAdded(false), 2000);
+        } catch {
+            setAddError("Nu s-a putut adăuga în coș. Încearcă din nou.");
+        }
     }
 
     return (
@@ -37,6 +43,9 @@ export default function AddToCartButton({ variant }: { variant: ProductVariantDe
                 {added ? "Adăugat!" : isOutOfStock ? "Stoc epuizat" : "Adaugă în coș"}
             </button>
             <FavoriteButton variantId={variant.variantId} />
+            {addError && (
+                <p className="col-span-full text-xs text-red-500 dark:text-red-400 text-center mt-1">{addError}</p>
+            )}
         </>
     );
 }

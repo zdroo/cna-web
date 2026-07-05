@@ -506,6 +506,7 @@ export default function HomeContent({ categories }: Props) {
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState<string | null>(null);
     const [filterOpen, setFilterOpen] = useState(false);
     const [sortOpen, setSortOpen] = useState(false);
     const sortRef = useRef<HTMLDivElement>(null);
@@ -525,6 +526,7 @@ export default function HomeContent({ categories }: Props) {
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
+        setFetchError(null);
         getVariantsFiltered({
             categoryId:     selectedCategoryId || undefined,
             productId:      selectedProductId  || undefined,
@@ -544,7 +546,7 @@ export default function HomeContent({ categories }: Props) {
                     setTotalCount(data.totalCount);
                 }
             })
-            .catch(() => {})
+            .catch(() => { if (!cancelled) setFetchError("Nu s-au putut încărca produsele. Încearcă din nou."); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [selectedCategoryId, selectedProductId, selectedProductSlug, onlyInStock, onlyDiscounted, sortBy, minPrice, maxPrice, page]);
@@ -747,6 +749,10 @@ export default function HomeContent({ categories }: Props) {
                 {/* Grid */}
                 {loading ? (
                     <PageSpinner />
+                ) : fetchError ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-red-500">
+                        <p className="text-lg font-medium">{fetchError}</p>
+                    </div>
                 ) : displayed.length > 0 ? (
                     <>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
