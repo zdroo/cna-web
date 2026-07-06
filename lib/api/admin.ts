@@ -330,7 +330,7 @@ export interface VariantAttribute { name: string; value: string; unitId?: string
 export async function adminGetVariants(token: string, productId?: string) {
     const all: unknown[] = [];
     let page = 1;
-    let currentToken = token;
+    const currentToken = token;
     while (true) {
         const params = new URLSearchParams({ pageSize: "100", page: String(page) });
         if (productId) params.set("productId", productId);

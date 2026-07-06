@@ -1,0 +1,39 @@
+name: Web CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    name: Type-check, lint & build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      # Public env vars are inlined at build time; dummy values are fine for a compile check.
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://localhost:44381
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: dummy-client-id
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000

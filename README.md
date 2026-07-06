@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CNA Shop — Web
 
-## Getting Started
+<!-- Replace OWNER with your GitHub username (and the repo name if different) once pushed. -->
+[![Web CI](https://github.com/OWNER/cna-web/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/cna-web/actions/workflows/ci.yml)
 
-First, run the development server:
+Frontend for **CNA Shop**, a full-stack e-commerce platform. A **Next.js 16** (App Router) storefront + admin panel in **TypeScript** and **Tailwind CSS 4**, talking to an ASP.NET Core 8 API. The UI is in Romanian.
+
+> Companion API: **[CNA.WebApi](../CNA.WebApi)** · Architecture deep-dive: **[ARCHITECTURE.md](../CNA.WebApi/ARCHITECTURE.md)**
+
+<!-- Add storefront + admin screenshots here for instant visual context -->
+
+---
+
+## Highlights
+
+- 🧭 **App Router** — server components render and fetch on the server where possible; interactive views are client components.
+- 🔐 **Silent-refresh auth** — JWT access + refresh tokens; the token is renewed ~1 min before expiry. A single `authFetch` wrapper attaches the Bearer token and transparently retries once on `401`.
+- 🪝 **Custom hooks** — e.g. `useTokenRef`, which keeps the token in a ref so data-fetch effects don't re-fire on background refresh.
+- 🛒 **Guest + user carts** — guests get a `crypto.randomUUID()` session cart that merges into the account cart on login.
+- 🔎 **URL-driven catalog filtering** — all filter/sort/pagination state lives in query params, so views are bookmarkable and shareable.
+- 🌗 **Dark mode** with no flash-of-unstyled-content, responsive layout, and a mobile navigation drawer.
+- 🧑‍💼 **Full admin panel** — products, variants, categories, orders (AWB dispatch), returns, coupons, gift cards, and analytics dashboards.
+
+---
+
+## Tech stack
+
+| Area | Choice |
+|------|--------|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript 5 (strict) |
+| Styling | Tailwind CSS 4 |
+| State | React Context (Auth · Cart · Favorites · Theme) |
+| Forms | React Hook Form 7 + Zod 4 |
+| Auth | JWT (localStorage) + `@react-oauth/google` |
+| HTTP | native `fetch` via typed `lib/api/*` wrappers |
+| Icons | Lucide React |
+
+---
+
+## Getting started
+
+**Prerequisites:** Node 18+, and the [CNA.WebApi](../CNA.WebApi) backend running on `https://localhost:44381`.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+NEXT_PUBLIC_API_URL=https://localhost:44381
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=<your-google-oauth-client-id>
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+> The `dev` script sets `NODE_TLS_REJECT_UNAUTHORIZED=0` so **server-side** rendering can fetch the API over its self-signed dev certificate. Without it, server-rendered pages (e.g. product detail) fail to load in development.
 
-## Learn More
+```bash
+npm run build   # production build
+npm run lint    # ESLint (0 errors)
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/                 # App Router pages
+  admin/             # Role-gated admin panel (products, orders, returns, analytics…)
+  produse/           # Catalog + product/variant detail (server-rendered)
+  cart/ checkout/    # Cart and multi-step checkout
+  payment/ profil/   # Stripe payment redirect, user profile & orders
+components/           # Shared UI (layout, home, products, ui)
+context/             # Auth, Cart, Favorites, Theme providers
+hooks/               # Reusable hooks (useTokenRef, …)
+lib/api/             # One typed fetch module per API domain
+types/               # Shared TypeScript interfaces
+```
 
-## Deploy on Vercel
+Providers wrap in order: `GoogleProvider → AuthProvider → ThemeProvider → CartProvider → FavoritesProvider`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Testing
+
+End-to-end coverage lives with the backend as a **67-test Selenium suite** (`CNA.E2ETests`) that drives a real browser against this frontend, the API, and a seeded database. There is also a Playwright spec set under `e2e/`.
+
+---
+
+## License
+
+Portfolio / educational project.
