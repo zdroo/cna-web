@@ -85,9 +85,9 @@ export default function ImageGallery({ imageUrls, name }: { imageUrls: string[],
                     {/* Dot indicators */}
                     {hasMultipleImages && (
                         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
-                            {imageUrls.map((_, index) => (
+                            {imageUrls.map((url, index) => (
                                 <button
-                                    key={index}
+                                    key={url}
                                     onClick={(e) => { e.stopPropagation(); setCurrentIndex(index); }}
                                     className={`w-1.5 h-1.5 rounded-full transition-colors ${
                                         index === currentIndex ? "bg-white" : "bg-white/50"
@@ -103,7 +103,7 @@ export default function ImageGallery({ imageUrls, name }: { imageUrls: string[],
                     <div className="flex gap-2 overflow-x-auto pb-1">
                         {imageUrls.map((url, index) => (
                             <button
-                                key={index}
+                                key={url}
                                 onClick={() => setCurrentIndex(index)}
                                 className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
                                     index === currentIndex

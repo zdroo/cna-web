@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { adminGetGiftCards, adminCreateGiftCard, adminDeleteGiftCard, GiftCardItem } from "@/lib/api/giftCards";
 import { Gift, Plus, Trash2, Loader2, X } from "lucide-react";
 
@@ -10,6 +11,7 @@ const EMPTY = { code: "", value: "", expiresAt: "" };
 
 export default function AdminCarduriCadouPage() {
     const { token, user, isLoaded } = useAuth();
+    const tokenRef = useTokenRef();
     const router = useRouter();
     const [items, setItems] = useState<GiftCardItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -24,14 +26,15 @@ export default function AdminCarduriCadouPage() {
     }, [isLoaded, user, router]);
 
     async function load() {
-        if (!token) return;
+        const t = tokenRef.current;
+        if (!t) return;
         setLoading(true);
         setError(null);
-        try { setItems(await adminGetGiftCards(token)); } catch { setError("Nu s-au putut încărca cardurile cadou."); }
+        try { setItems(await adminGetGiftCards(t)); } catch { setError("Nu s-au putut încărca cardurile cadou."); }
         finally { setLoading(false); }
     }
 
-    useEffect(() => { load(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!isLoaded || !user || user.role !== "Admin") return null;
 

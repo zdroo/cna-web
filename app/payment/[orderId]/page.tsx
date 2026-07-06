@@ -3,26 +3,30 @@
 import { useEffect, useState, use, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { createPaymentSession } from "@/lib/api/payments";
 import { XCircle } from "lucide-react";
 import Link from "next/link";
 
 function PaymentPageContent({ orderId }: { orderId: string }) {
     const router = useRouter();
-    const { user, token, isLoaded } = useAuth();
+    const { user, isLoaded } = useAuth();
     const searchParams = useSearchParams();
     const cancelled = searchParams.get("cancelled") === "true";
     const [error, setError] = useState<string | null>(null);
 
+    const tokenRef = useTokenRef();
+
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user || !token) { router.replace("/auth/login"); return; }
+        const t = tokenRef.current;
+        if (!user || !t) { router.replace("/auth/login"); return; }
         if (cancelled) return;
 
-        createPaymentSession(token, orderId)
+        createPaymentSession(t, orderId)
             .then(({ url }) => { window.location.href = url; })
             .catch(() => setError("Nu s-a putut iniția plata. Încearcă din nou."));
-    }, [isLoaded, user, token, orderId, cancelled, router]);
+    }, [isLoaded, user, orderId, cancelled, router]);
 
     if (!isLoaded || !user) return null;
 

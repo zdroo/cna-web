@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     adminGetRevenueStats,
     adminGetTopSellingVariants,
@@ -379,7 +379,7 @@ function Empty() {
 
 // ── Page ─────────────────────────────────────────────────────
 export default function AdminStatisticiPage() {
-    const { token } = useAuth();
+    const tokenRef = useTokenRef();
 
     const [granularity, setGranularity] = useState<RevenueGranularity>("Day");
     const [revenueData, setRevenueData]   = useState<RevenuePoint[]>([]);
@@ -398,31 +398,34 @@ export default function AdminStatisticiPage() {
     const [heatError, setHeatError] = useState(false);
 
     useEffect(() => {
-        if (!token) return;
+        const t = tokenRef.current;
+        if (!t) return;
         setRevenueLoading(true);
         setRevenueError(false);
-        adminGetRevenueStats(token, granularity)
+        adminGetRevenueStats(t, granularity)
             .then(setRevenueData).catch(() => setRevenueError(true))
             .finally(() => setRevenueLoading(false));
-    }, [token, granularity]);
+    }, [granularity]);
 
     useEffect(() => {
-        if (!token) return;
+        const t = tokenRef.current;
+        if (!t) return;
         setTopLoading(true);
         setTopError(false);
-        adminGetTopSellingVariants(token, 10, topDays)
+        adminGetTopSellingVariants(t, 10, topDays)
             .then(setTopData).catch(() => setTopError(true))
             .finally(() => setTopLoading(false));
-    }, [token, topDays]);
+    }, [topDays]);
 
     useEffect(() => {
-        if (!token) return;
+        const t = tokenRef.current;
+        if (!t) return;
         setHeatLoading(true);
         setHeatError(false);
-        adminGetMonthlyProductSales(token, heatMonths, heatTop)
+        adminGetMonthlyProductSales(t, heatMonths, heatTop)
             .then(setHeatData).catch(() => setHeatError(true))
             .finally(() => setHeatLoading(false));
-    }, [token, heatMonths, heatTop]);
+    }, [heatMonths, heatTop]);
 
     const totalRevenue = revenueData.reduce((s, d) => s + d.revenue, 0);
     const totalOrders  = revenueData.reduce((s, d) => s + d.orderCount, 0);

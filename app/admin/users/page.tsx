@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { getUsers, UserListItem } from "@/lib/api/user";
 import { Search, ChevronLeft, ChevronRight, Users, ShieldCheck, Store, UserCircle, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
@@ -18,7 +18,7 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function AdminUsersPage() {
-    const { token } = useAuth();
+    const tokenRef = useTokenRef();
     const [items, setItems] = useState<UserListItem[]>([]);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
@@ -32,11 +32,12 @@ export default function AdminUsersPage() {
     useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
     useEffect(() => {
-        if (!token) return;
+        const t = tokenRef.current;
+        if (!t) return;
         let cancelled = false;
         setLoading(true);
         setLoadError(false);
-        getUsers(token, page, 20, search || undefined)
+        getUsers(t, page, 20, search || undefined)
             .then((data) => {
                 if (cancelled) return;
                 setItems(data.items);
@@ -46,7 +47,7 @@ export default function AdminUsersPage() {
             .catch(() => { if (!cancelled) setLoadError(true); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
-    }, [token, page, search]);
+    }, [page, search]);
 
     function handleSearchChange(value: string) {
         setInputValue(value);

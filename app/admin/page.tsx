@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ShoppingCart, BarChart2, FolderOpen, Package, Layers, Users, ChevronRight, TrendingUp, Clock, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { adminGetKPIs, type AdminKPIs } from "@/lib/api/admin";
 
 const MANAGEMENT = [
@@ -16,13 +17,16 @@ const MANAGEMENT = [
 ];
 
 export default function AdminDashboard() {
-    const { token } = useAuth();
+    const { user } = useAuth();
+    const tokenRef = useTokenRef();
     const [kpis, setKpis] = useState<AdminKPIs | null>(null);
 
     useEffect(() => {
-        if (!token) return;
-        adminGetKPIs(token).then(setKpis).catch(() => null);
-    }, [token]);
+        const t = tokenRef.current;
+        if (!t) return;
+        adminGetKPIs(t).then(setKpis).catch(() => null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     return (
         <div className="flex flex-col gap-8">

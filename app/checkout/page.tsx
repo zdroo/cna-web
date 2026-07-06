@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { checkout } from "@/lib/api/cart";
 import {
     getShippingContacts,
@@ -35,8 +36,7 @@ export default function CheckoutPage() {
     const { user, token, isLoaded } = useAuth();
 
     const submittedRef = useRef(false);
-    const tokenRef = useRef(token);
-    useEffect(() => { tokenRef.current = token; }, [token]);
+    const tokenRef = useTokenRef();
     const [contacts, setContacts] = useState<ShippingContact[]>([]);
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [showNewForm, setShowNewForm] = useState(false);

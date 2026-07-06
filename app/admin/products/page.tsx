@@ -5,6 +5,7 @@ import Link from "next/link";
 import PageSpinner from "@/components/ui/PageSpinner";
 import { Plus, Pencil, Trash2, ExternalLink, Upload, FileText, AlertCircle, CheckCircle2, Download, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     adminGetProducts,
     adminDeleteProduct,
@@ -62,6 +63,7 @@ function parseCsv(text: string): ProductImportRow[] {
 
 export default function AdminProductsPage() {
     const { token, user } = useAuth();
+    const tokenRef = useTokenRef();
     const isSeller = user?.role === "Seller";
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -77,14 +79,16 @@ export default function AdminProductsPage() {
     const [importResult, setImportResult] = useState<ProductImportResult | null>(null);
 
     useEffect(() => {
-        if (!token) return;
-        adminGetProducts(token)
+        const t = tokenRef.current;
+        if (!t) return;
+        adminGetProducts(t)
             .then((all: Product[]) => {
                 setProducts(isSeller ? all.filter(p => p.sellerId === user?.userId) : all);
             })
             .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
-    }, [token]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     async function handleDelete(productId: string, name: string) {
         if (!token) return;
@@ -121,7 +125,7 @@ export default function AdminProductsPage() {
     function toggleSelect(id: string) {
         setSelected((prev) => {
             const s = new Set(prev);
-            s.has(id) ? s.delete(id) : s.add(id);
+            if (s.has(id)) s.delete(id); else s.add(id);
             return s;
         });
     }

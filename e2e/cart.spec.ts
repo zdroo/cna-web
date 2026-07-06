@@ -10,7 +10,7 @@
  * Run: npx playwright test cart
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.test' });

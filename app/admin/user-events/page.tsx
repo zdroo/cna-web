@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     getUserEvents, getFunnel,
     UserEventDto, UserEventType, FunnelResult,
@@ -70,7 +71,8 @@ function FunnelCard({ funnel }: { funnel: FunnelResult }) {
 }
 
 export default function UserEventsPage() {
-    const { token, user, isLoaded } = useAuth();
+    const { user, isLoaded } = useAuth();
+    const tokenRef = useTokenRef();
     const router = useRouter();
     const [events, setEvents] = useState<UserEventDto[]>([]);
     const [totalPages, setTotalPages] = useState(1);
@@ -95,17 +97,18 @@ export default function UserEventsPage() {
     }), [days]);
 
     const load = useCallback(async (p: number) => {
-        if (!token) return;
+        const t = tokenRef.current;
+        if (!t) return;
         setLoading(true);
         try {
             const [eventsResult, funnelResult] = await Promise.all([
-                getUserEvents(token, {
+                getUserEvents(t, {
                     page: p, pageSize: PAGE_SIZE,
                     eventType: filterType || undefined,
                     userEmail: filterUser || undefined,
                     from, to,
                 }),
-                getFunnel(token, from, to),
+                getFunnel(t, from, to),
             ]);
             setEvents(eventsResult.items);
             setTotalPages(eventsResult.totalPages);
@@ -115,7 +118,7 @@ export default function UserEventsPage() {
         } finally {
             setLoading(false);
         }
-    }, [token, filterType, filterUser, from, to]);
+    }, [filterType, filterUser, from, to]);
 
     useEffect(() => { setPage(1); }, [filterType, filterUser, days]);
     useEffect(() => { load(page); }, [load, page]);

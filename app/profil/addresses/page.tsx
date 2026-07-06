@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     ShippingContact,
     getShippingContacts,
@@ -48,14 +49,17 @@ export default function AddressesPage() {
     const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
 
+    const tokenRef = useTokenRef();
+
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user || !token) { router.replace("/auth/login"); return; }
-        getShippingContacts(token)
+        const t = tokenRef.current;
+        if (!user || !t) { router.replace("/auth/login"); return; }
+        getShippingContacts(t)
             .then(setContacts)
             .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
-    }, [isLoaded, user, token, router]);
+    }, [isLoaded, user, router]);
 
     async function handleAdd(e: React.FormEvent) {
         e.preventDefault();

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Plus, Pencil, Trash2, X, Check, Upload, FileText, AlertCircle, CheckCircle2, Download } from "lucide-react";
 import PageSpinner from "@/components/ui/PageSpinner";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     adminGetCategories,
     adminCreateCategory,
@@ -79,7 +80,8 @@ function parseCsv(text: string): CategoryImportRow[] {
 }
 
 export default function AdminCategoriiPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const tokenRef = useTokenRef();
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -100,12 +102,14 @@ export default function AdminCategoriiPage() {
     const [importResult, setImportResult] = useState<CategoryImportResult | null>(null);
 
     useEffect(() => {
-        if (!token) return;
-        adminGetCategories(token)
+        const t = tokenRef.current;
+        if (!t) return;
+        adminGetCategories(t)
             .then(setCategories)
             .catch(() => setError("Nu s-au putut încărca categoriile."))
             .finally(() => setLoading(false));
-    }, [token]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     function openCreate() {
         setEditingId(null);
@@ -203,7 +207,7 @@ export default function AdminCategoriiPage() {
     function toggleSelect(id: string) {
         setSelected((prev) => {
             const s = new Set(prev);
-            s.has(id) ? s.delete(id) : s.add(id);
+            if (s.has(id)) s.delete(id); else s.add(id);
             return s;
         });
     }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, Package, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { getOrderById, type Order } from "@/lib/api/orders";
 
 function shortId(id: string) {
@@ -13,20 +14,23 @@ function shortId(id: string) {
 
 export default function ConfirmationPage() {
     const { orderId } = useParams<{ orderId: string }>();
-    const { user, token, isLoaded } = useAuth();
+    const { user, isLoaded } = useAuth();
     const router = useRouter();
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const tokenRef = useTokenRef();
+
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user || !token) { router.replace("/auth/login"); return; }
+        const t = tokenRef.current;
+        if (!user || !t) { router.replace("/auth/login"); return; }
         if (!orderId) { setLoading(false); return; }
-        getOrderById(token, orderId)
+        getOrderById(t, orderId)
             .then(setOrder)
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [isLoaded, user, token, orderId, router]);
+    }, [isLoaded, user, orderId, router]);
 
     if (!isLoaded || !user || !orderId) return null;
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     getCompanyProfile,
     upsertCompanyProfile,
@@ -38,11 +39,14 @@ export default function CompanyProfilePage() {
     const [form, setForm] = useState(emptyForm);
     const [exists, setExists] = useState(false);
 
+    const tokenRef = useTokenRef();
+
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user || !token) { router.replace("/auth/login"); return; }
+        const t = tokenRef.current;
+        if (!user || !t) { router.replace("/auth/login"); return; }
 
-        getCompanyProfile(token)
+        getCompanyProfile(t)
             .then((profile) => {
                 if (profile) {
                     setExists(true);
@@ -63,7 +67,7 @@ export default function CompanyProfilePage() {
             })
             .catch(() => setError("Nu s-a putut încărca profilul. Reîncarcă pagina."))
             .finally(() => setLoading(false));
-    }, [isLoaded, user, token, router]);
+    }, [isLoaded, user, router]);
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         const { name, value, type, checked } = e.target;

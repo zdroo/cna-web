@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { adminGetCoupons, adminCreateCoupon, adminDeleteCoupon, adminToggleCoupon, CouponItem } from "@/lib/api/coupons";
 import { Tag, Plus, Trash2, Loader2, ToggleLeft, ToggleRight, X } from "lucide-react";
 
@@ -18,6 +19,7 @@ const EMPTY = {
 
 export default function AdminCupoanePage() {
     const { token, user, isLoaded } = useAuth();
+    const tokenRef = useTokenRef();
     const router = useRouter();
     const [items, setItems] = useState<CouponItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -32,14 +34,15 @@ export default function AdminCupoanePage() {
     }, [isLoaded, user, router]);
 
     async function load() {
-        if (!token) return;
+        const t = tokenRef.current;
+        if (!t) return;
         setLoading(true);
         setError(null);
-        try { setItems(await adminGetCoupons(token)); } catch { setError("Nu s-au putut încărca cupoanele."); }
+        try { setItems(await adminGetCoupons(t)); } catch { setError("Nu s-au putut încărca cupoanele."); }
         finally { setLoading(false); }
     }
 
-    useEffect(() => { load(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => { load(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!isLoaded || !user || user.role !== "Admin") return null;
 

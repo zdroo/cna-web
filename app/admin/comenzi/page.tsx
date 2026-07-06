@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import PageSpinner from "@/components/ui/PageSpinner";
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Package, MessageSquarePlus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     adminGetOrders,
     adminUpdateOrderStatus,
@@ -57,6 +58,7 @@ function shortId(id: string) {
 
 export default function AdminComenziPage() {
     const { token, user } = useAuth();
+    const tokenRef = useTokenRef();
     const isAdmin = user?.role === "Admin";
     const [orders, setOrders] = useState<OrderAdmin[]>([]);
     const [loading, setLoading] = useState(true);
@@ -75,11 +77,12 @@ export default function AdminComenziPage() {
     const PAGE_SIZE = 20;
 
     useEffect(() => {
-        if (!token) return;
+        const t = tokenRef.current;
+        if (!t) return;
         let cancelled = false;
         setLoading(true);
         setLoadError(false);
-        adminGetOrders(token, { status: activeTab, page, pageSize: PAGE_SIZE })
+        adminGetOrders(t, { status: activeTab, page, pageSize: PAGE_SIZE })
             .then((data) => {
                 if (cancelled) return;
                 setOrders(data.items);
@@ -89,7 +92,7 @@ export default function AdminComenziPage() {
             .catch(() => { if (!cancelled) setLoadError(true); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
-    }, [token, activeTab, page]);
+    }, [activeTab, page]);
 
     async function handleStatusUpdate(orderId: string, newStatus: OrderStatus) {
         if (!token) return;

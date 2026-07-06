@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, RotateCcw, Clock, PackageCheck, HelpCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     getUserReturnRequests,
     ReturnRequest,
@@ -34,21 +35,24 @@ const HOW_IT_WORKS = [
 ];
 
 export default function ReturnsPage() {
-    const { token, isLoaded, user } = useAuth();
+    const { isLoaded, user } = useAuth();
     const router = useRouter();
     const [requests, setRequests] = useState<ReturnRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const tokenRef = useTokenRef();
+
     useEffect(() => {
         if (!isLoaded) return;
         if (!user) { router.replace("/auth/login"); return; }
-        if (!token) return;
-        getUserReturnRequests(token)
+        const t = tokenRef.current;
+        if (!t) return;
+        getUserReturnRequests(t)
             .then(setRequests)
             .catch(() => setError("Nu s-au putut încărca cererile de retur."))
             .finally(() => setLoading(false));
-    }, [isLoaded, user, token, router]);
+    }, [isLoaded, user, router]);
 
     return (
         <div className="max-w-lg mx-auto flex flex-col gap-6">

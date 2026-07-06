@@ -32,11 +32,6 @@ const FAKE_VARIANT = {
     primaryImageUrl: null, imageUrls: [], attributes: {},
 };
 
-// One product, one page → pagination not shown.
-const ONE_ITEM_PAGED = JSON.stringify({
-    items: [FAKE_VARIANT], totalCount: 1, page: 1, pageSize: 24, totalPages: 1,
-});
-
 // One product, three pages → pagination renders.
 const THREE_PAGES_PAGED = JSON.stringify({
     items: [FAKE_VARIANT], totalCount: 72, page: 1, pageSize: 24, totalPages: 3,

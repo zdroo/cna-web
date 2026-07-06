@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     getAdminReturnRequests,
     updateReturnStatus,
@@ -39,6 +40,7 @@ function shortId(id: string) {
 
 export default function AdminReturnsPage() {
     const { token } = useAuth();
+    const tokenRef = useTokenRef();
     const [items, setItems] = useState<AdminReturnRequest[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [page, setPage] = useState(1);
@@ -52,16 +54,17 @@ export default function AdminReturnsPage() {
     const [confirmReceived, setConfirmReceived] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!token) return;
+        const t = tokenRef.current;
+        if (!t) return;
         setLoading(true);
-        getAdminReturnRequests(token, page, PAGE_SIZE, activeTab)
+        getAdminReturnRequests(t, page, PAGE_SIZE, activeTab)
             .then((res) => {
                 setItems(res.items);
                 setTotalCount(res.totalCount);
             })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [token, activeTab, page]);
+    }, [activeTab, page]);
 
     function handleTabChange(val: ReturnStatus | undefined) {
         setActiveTab(val);

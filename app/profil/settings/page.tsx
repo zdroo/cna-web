@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { getUserProfile, updateProfile, deleteAccount, UserProfile } from "@/lib/api/user";
 import { forgotPassword } from "@/lib/api/auth";
 import { ArrowLeft, Loader2, User, Lock, CheckCircle, Mail, Trash2, AlertTriangle } from "lucide-react";
@@ -29,10 +30,13 @@ export default function SettingsPage() {
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
+    const tokenRef = useTokenRef();
+
     useEffect(() => {
         if (!isLoaded) return;
-        if (!user || !token) { router.replace("/auth/login"); return; }
-        getUserProfile(token)
+        const t = tokenRef.current;
+        if (!user || !t) { router.replace("/auth/login"); return; }
+        getUserProfile(t)
             .then((p) => {
                 setProfile(p);
                 setFirstName(p.firstName ?? "");
@@ -40,7 +44,7 @@ export default function SettingsPage() {
             })
             .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
-    }, [isLoaded, user, token, router]);
+    }, [isLoaded, user, router]);
 
     async function handleProfileSave(e: React.FormEvent) {
         e.preventDefault();

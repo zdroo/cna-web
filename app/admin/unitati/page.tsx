@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, X, Check, Lock } from "lucide-react";
 import PageSpinner from "@/components/ui/PageSpinner";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     MeasurementUnit,
     adminGetMeasurementUnits,
@@ -21,7 +22,8 @@ interface FormState {
 const emptyForm: FormState = { name: "", symbol: "", measures: "" };
 
 export default function AdminUnitatiPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const tokenRef = useTokenRef();
     const [units, setUnits] = useState<MeasurementUnit[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -32,12 +34,14 @@ export default function AdminUnitatiPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!token) return;
-        adminGetMeasurementUnits(token)
+        const t = tokenRef.current;
+        if (!t) return;
+        adminGetMeasurementUnits(t)
             .then(setUnits)
             .catch(() => setError("Nu s-au putut încărca unitățile de măsură."))
             .finally(() => setLoading(false));
-    }, [token]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     const grouped = units.reduce<Record<string, MeasurementUnit[]>>((acc, u) => {
         (acc[u.measures] ??= []).push(u);

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Check } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { adminGetCategories, adminCreateProduct } from "@/lib/api/admin";
 
 interface Category { categoryId: string; name: string; }
@@ -19,7 +20,8 @@ interface FormState {
 const inputClass = "px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100";
 
 export default function AdminNewProductPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const tokenRef = useTokenRef();
     const router = useRouter();
     const [categories, setCategories] = useState<Category[]>([]);
     const [form, setForm] = useState<FormState>({ name: "", description: "", brand: "", categoryId: "" });
@@ -27,14 +29,16 @@ export default function AdminNewProductPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!token) return;
-        adminGetCategories(token)
+        const t = tokenRef.current;
+        if (!t) return;
+        adminGetCategories(t)
             .then((cats: Category[]) => {
                 setCategories(cats);
                 if (cats.length > 0) setForm((f) => ({ ...f, categoryId: cats[0].categoryId }));
             })
             .catch(() => setError("Nu s-au putut încărca categoriile."));
-    }, [token]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((prev) => ({ ...prev, [key]: value }));

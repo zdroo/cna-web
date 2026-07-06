@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, X, Check, ExternalLink, SlidersHorizontal, ImageP
 import PageSpinner from "@/components/ui/PageSpinner";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import {
     adminGetVariants,
     adminGetProducts,
@@ -451,7 +452,8 @@ function UnitCombobox({
 }
 
 export default function AdminVariantePage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const tokenRef = useTokenRef();
     const [variants, setVariants] = useState<Variant[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [units, setUnits] = useState<MeasurementUnit[]>([]);
@@ -467,8 +469,9 @@ export default function AdminVariantePage() {
     const [batchDeleting, setBatchDeleting] = useState(false);
 
     useEffect(() => {
-        if (!token) return;
-        Promise.all([adminGetVariants(token), adminGetProducts(token), adminGetMeasurementUnits(token)])
+        const t = tokenRef.current;
+        if (!t) return;
+        Promise.all([adminGetVariants(t), adminGetProducts(t), adminGetMeasurementUnits(t)])
             .then(([v, p, u]) => {
                 setVariants(v as Variant[]);
                 setProducts(p as Product[]);
@@ -476,7 +479,8 @@ export default function AdminVariantePage() {
             })
             .catch(() => setError("Nu s-au putut încărca variantele."))
             .finally(() => setLoading(false));
-    }, [token]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     function openCreate() {
         setEditingId(null);

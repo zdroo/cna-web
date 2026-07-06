@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import PageSpinner from "@/components/ui/PageSpinner";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { getOrders, cancelOrder, downloadInvoice, Order, OrderStatus, STATUS_ORDER } from "@/lib/api/orders";
 import { createReturnRequest, getUserReturnRequests, ReturnRequest } from "@/lib/api/returns";
 import { PackageSearch, X, RotateCcw, Clock, BadgeCheck, Truck, PackageCheck, Check, Loader2, Building2, FileText, Download, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
@@ -323,8 +324,7 @@ export default function ComenziPage() {
     const [returnOrder, setReturnOrder] = useState<Order | null>(null);
     const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
     const returnSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const tokenRef = useRef(token);
-    useEffect(() => { tokenRef.current = token; }, [token]);
+    const tokenRef = useTokenRef();
 
     const fetchOrders = useCallback(async (p: number) => {
         const t = tokenRef.current;

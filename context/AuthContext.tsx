@@ -58,7 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("token", newToken);
         localStorage.setItem("refreshToken", newRefresh);
         setToken(newToken);
-        setUser(parseToken(newToken));
+        setUser(prev => {
+            const next = parseToken(newToken);
+            return prev?.userId === next?.userId && prev?.email === next?.email && prev?.role === next?.role
+                ? prev : next;
+        });
         scheduleRefreshRef.current?.(newToken);
     }
 
@@ -99,7 +103,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         function onRefreshed(e: Event) {
             const detail = (e as CustomEvent<{ token: string; refreshToken: string }>).detail;
             setToken(detail.token);
-            setUser(parseToken(detail.token));
+            setUser(prev => {
+                const next = parseToken(detail.token);
+                return prev?.userId === next?.userId && prev?.email === next?.email && prev?.role === next?.role
+                    ? prev : next;
+            });
             scheduleRefreshRef.current?.(detail.token);
         }
 

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Check } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenRef } from "@/hooks/useTokenRef";
 import { adminGetProductById, adminGetCategories, adminUpdateProduct } from "@/lib/api/admin";
 
 interface Category { categoryId: string; name: string; }
@@ -40,6 +41,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 
 export default function AdminEditProductPage() {
     const { token } = useAuth();
+    const tokenRef = useTokenRef();
     const router = useRouter();
     const params = useParams();
     const productId = params.productId as string;
@@ -56,10 +58,11 @@ export default function AdminEditProductPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!token || !productId) return;
+        const t = tokenRef.current;
+        if (!t || !productId) return;
         Promise.all([
-            adminGetProductById(token, productId),
-            adminGetCategories(token),
+            adminGetProductById(t, productId),
+            adminGetCategories(t),
         ])
             .then(([product, cats]) => {
                 setCategories(cats);
@@ -78,7 +81,7 @@ export default function AdminEditProductPage() {
             })
             .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
-    }, [token, productId]);
+    }, [productId]);
 
     function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((prev) => ({ ...prev, [key]: value }));
