@@ -81,7 +81,7 @@ export default function AdminEditProductPage() {
             })
             .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
-    }, [productId]);
+    }, [productId, tokenRef]);
 
     function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((prev) => ({ ...prev, [key]: value }));

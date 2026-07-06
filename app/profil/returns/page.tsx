@@ -52,7 +52,7 @@ export default function ReturnsPage() {
             .then(setRequests)
             .catch(() => setError("Nu s-au putut încărca cererile de retur."))
             .finally(() => setLoading(false));
-    }, [isLoaded, user, router]);
+    }, [isLoaded, user, router, tokenRef]);
 
     return (
         <div className="max-w-lg mx-auto flex flex-col gap-6">

@@ -21,7 +21,7 @@ export default function ConfidentialittatePage() {
                 <section>
                     <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">1. Cine suntem</h2>
                     <p>
-                        <strong>CNA S.R.L.</strong> („noi", „operatorul") cu sediul în Str. Exemplu nr. 1, Cluj-Napoca, România, CUI RO00000000, este operatorul datelor cu caracter personal colectate prin intermediul site-ului <strong>cnashop.ro</strong>.
+                        <strong>CNA S.R.L.</strong> („noi”, „operatorul”) cu sediul în Str. Exemplu nr. 1, Cluj-Napoca, România, CUI RO00000000, este operatorul datelor cu caracter personal colectate prin intermediul site-ului <strong>cnashop.ro</strong>.
                     </p>
                     <p className="mt-2">
                         Contact DPO / responsabil date: <a href="mailto:contact@cna.shop" className="underline">contact@cna.shop</a>
@@ -101,7 +101,7 @@ export default function ConfidentialittatePage() {
                     <ul className="list-disc list-inside mt-2 flex flex-col gap-1">
                         <li><strong>Stripe Inc.</strong> — procesare plăți (SUA; acoperit de Clauze Contractuale Standard)</li>
                         <li><strong>Furnizori de servicii de curierat</strong> — livrarea coletelor</li>
-                        <li><strong>Google LLC</strong> — autentificare OAuth (dacă utilizați „Login cu Google")</li>
+                        <li><strong>Google LLC</strong> — autentificare OAuth (dacă utilizați „Login cu Google”)</li>
                         <li><strong>Resend Inc.</strong> — trimitere email-uri tranzacționale</li>
                     </ul>
                     <p className="mt-2">

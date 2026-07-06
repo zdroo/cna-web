@@ -92,7 +92,7 @@ export default function AdminComenziPage() {
             .catch(() => { if (!cancelled) setLoadError(true); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
-    }, [activeTab, page]);
+    }, [activeTab, page, tokenRef]);
 
     async function handleStatusUpdate(orderId: string, newStatus: OrderStatus) {
         if (!token) return;

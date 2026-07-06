@@ -26,7 +26,7 @@ function PaymentPageContent({ orderId }: { orderId: string }) {
         createPaymentSession(t, orderId)
             .then(({ url }) => { window.location.href = url; })
             .catch(() => setError("Nu s-a putut iniția plata. Încearcă din nou."));
-    }, [isLoaded, user, orderId, cancelled, router]);
+    }, [isLoaded, user, orderId, cancelled, router, tokenRef]);
 
     if (!isLoaded || !user) return null;
 

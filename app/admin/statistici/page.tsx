@@ -405,7 +405,7 @@ export default function AdminStatisticiPage() {
         adminGetRevenueStats(t, granularity)
             .then(setRevenueData).catch(() => setRevenueError(true))
             .finally(() => setRevenueLoading(false));
-    }, [granularity]);
+    }, [granularity, tokenRef]);
 
     useEffect(() => {
         const t = tokenRef.current;
@@ -415,7 +415,7 @@ export default function AdminStatisticiPage() {
         adminGetTopSellingVariants(t, 10, topDays)
             .then(setTopData).catch(() => setTopError(true))
             .finally(() => setTopLoading(false));
-    }, [topDays]);
+    }, [topDays, tokenRef]);
 
     useEffect(() => {
         const t = tokenRef.current;
@@ -425,7 +425,7 @@ export default function AdminStatisticiPage() {
         adminGetMonthlyProductSales(t, heatMonths, heatTop)
             .then(setHeatData).catch(() => setHeatError(true))
             .finally(() => setHeatLoading(false));
-    }, [heatMonths, heatTop]);
+    }, [heatMonths, heatTop, tokenRef]);
 
     const totalRevenue = revenueData.reduce((s, d) => s + d.revenue, 0);
     const totalOrders  = revenueData.reduce((s, d) => s + d.orderCount, 0);

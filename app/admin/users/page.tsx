@@ -47,7 +47,7 @@ export default function AdminUsersPage() {
             .catch(() => { if (!cancelled) setLoadError(true); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
-    }, [page, search]);
+    }, [page, search, tokenRef]);
 
     function handleSearchChange(value: string) {
         setInputValue(value);

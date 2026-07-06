@@ -44,7 +44,7 @@ export default function SettingsPage() {
             })
             .catch(() => setLoadError(true))
             .finally(() => setLoading(false));
-    }, [isLoaded, user, router]);
+    }, [isLoaded, user, router, tokenRef]);
 
     async function handleProfileSave(e: React.FormEvent) {
         e.preventDefault();

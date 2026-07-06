@@ -67,7 +67,7 @@ export default function CompanyProfilePage() {
             })
             .catch(() => setError("Nu s-a putut încărca profilul. Reîncarcă pagina."))
             .finally(() => setLoading(false));
-    }, [isLoaded, user, router]);
+    }, [isLoaded, user, router, tokenRef]);
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         const { name, value, type, checked } = e.target;

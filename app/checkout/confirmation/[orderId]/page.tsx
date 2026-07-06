@@ -30,7 +30,7 @@ export default function ConfirmationPage() {
             .then(setOrder)
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [isLoaded, user, orderId, router]);
+    }, [isLoaded, user, orderId, router, tokenRef]);
 
     if (!isLoaded || !user || !orderId) return null;
 

@@ -64,7 +64,7 @@ export default function AdminReturnsPage() {
             })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [activeTab, page]);
+    }, [activeTab, page, tokenRef]);
 
     function handleTabChange(val: ReturnStatus | undefined) {
         setActiveTab(val);

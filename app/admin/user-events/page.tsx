@@ -118,7 +118,7 @@ export default function UserEventsPage() {
         } finally {
             setLoading(false);
         }
-    }, [filterType, filterUser, from, to]);
+    }, [filterType, filterUser, from, to, tokenRef]);
 
     useEffect(() => { setPage(1); }, [filterType, filterUser, days]);
     useEffect(() => { load(page); }, [load, page]);
